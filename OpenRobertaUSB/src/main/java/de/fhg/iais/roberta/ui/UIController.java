@@ -17,28 +17,29 @@ import de.fhg.iais.roberta.usb.Main;
 
 public class UIController<ObservableObject> implements Observer {
 
-    private final Connector connector;
+    private Connector connector;
     private final ConnectionView conView;
     private boolean connected;
     private final ResourceBundle rb;
     private static Logger log = Logger.getLogger("Connector");
 
-    public UIController(Connector usbCon, ConnectionView conView, ResourceBundle rb) {
-        this.connector = usbCon;
+    public UIController(ConnectionView conView, ResourceBundle rb) {
         this.conView = conView;
         this.rb = rb;
         this.connected = false;
         addListener();
+        this.conView.setVisible(true);
     }
 
-    public void control() {
-        this.conView.setVisible(true);
+    public void setConnector(Connector usbCon) {
+        this.connector = usbCon;
+        ((Observable) this.connector).addObserver(this);
+        log.config("GUI setup done. Using " + usbCon.getClass().getSimpleName());
     }
 
     private void addListener() {
         this.conView.setConnectActionListener(new ConnectActionListener());
         this.conView.setCloseListener(new CloseListener());
-        ((Observable) this.connector).addObserver(this);
     }
 
     public class ConnectActionListener implements ActionListener {
@@ -58,12 +59,16 @@ public class UIController<ObservableObject> implements Observer {
             } else {
                 if ( b.isSelected() ) {
                     log.info("User connect");
-                    checkForValidCustomServerAddressAndUpdate();
-                    UIController.this.connector.connect();
+                    if ( UIController.this.connector != null ) {
+                        checkForValidCustomServerAddressAndUpdate();
+                        UIController.this.connector.connect();
+                    }
                     b.setText(UIController.this.rb.getString("disconnect"));
                 } else {
                     log.info("User disconnect");
-                    UIController.this.connector.disconnect();
+                    if ( UIController.this.connector != null ) {
+                        UIController.this.connector.disconnect();
+                    }
                     b.setText(UIController.this.rb.getString("connect"));
                 }
             }
@@ -121,7 +126,14 @@ public class UIController<ObservableObject> implements Observer {
                     new ImageIcon(getClass().getClassLoader().getResource("Roberta.png")),
                     buttons);
             if ( n == 0 ) {
-                this.connector.close();
+                if ( this.connector != null ) {
+                    this.connector.close();
+                    try {
+                        Thread.sleep(500); // give NXTUSBBTConnector time to play disconnect melody? :-)
+                    } catch ( InterruptedException e ) {
+                        // ok
+                    }
+                }
                 Main.stopFileLogger();
                 System.exit(0);
             }

@@ -1,10 +1,12 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fhg.iais.openroberta</groupId>
 	<artifactId>OpenRobertaUSB</artifactId>
 	<version>1.4.0-SNAPSHOT</version>
 	<properties>
-		<!-- the server and the crosscompiler SHOULD be compatible between(including) the following two versions of software deployed on the ROBOT -->
+		<!-- the server and the crosscompiler SHOULD be compatible between(including) 
+			the following two versions of software deployed on the ROBOT -->
 		<validversionrange.From>1.4.0</validversionrange.From>
 		<validversionrange.To>1.4.0</validversionrange.To>
 
@@ -18,6 +20,30 @@
 		<maven.compiler.target>1.7</maven.compiler.target>
 		<maven.compiler.source>1.7</maven.compiler.source>
 	</properties>
+	    <repositories>
+        <repository>
+            <id>ORA-releases</id>
+            <name>Open Roberta releases repository</name>
+            <url>http://ok-maven.iais.fraunhofer.de/artifactory/openroberta-snapshot-local</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>ORA-snapshots</id>
+            <name>Open Roberta snapshot repository</name>
+            <url>http://ok-maven.iais.fraunhofer.de/artifactory/openroberta-snapshot-local</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
 	<dependencies>
 		<dependency>
 			<groupId>org.json</groupId>
@@ -35,11 +61,27 @@
 			<version>3.1</version>
 		</dependency>
 		<dependency>
+			<groupId>lego.nxt</groupId>
+			<artifactId>pccomm</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.bluecove</groupId>
+			<artifactId>bluecove</artifactId>
+			<version>2.1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.bluecove</groupId>
+			<artifactId>bluecove-gpl</artifactId>
+			<version>2.1.0</version>
+		</dependency>
+		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.10</version>
 			<scope>test</scope>
 		</dependency>
+
 	</dependencies>
 	<build>
 		<plugins>

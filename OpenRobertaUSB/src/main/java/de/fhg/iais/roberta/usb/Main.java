@@ -17,6 +17,7 @@ import javax.swing.UIManager;
 import org.apache.commons.lang3.SystemUtils;
 
 import de.fhg.iais.roberta.connection.EV3USBConnector;
+import de.fhg.iais.roberta.connection.NXTUSBBTConnector;
 import de.fhg.iais.roberta.ui.ConnectionView;
 import de.fhg.iais.roberta.ui.UIController;
 import de.fhg.iais.roberta.util.ORAFormatter;
@@ -30,6 +31,13 @@ public class Main {
 
     private static File logFile = null;
 
+    private static EV3USBConnector ev3usbcon = null;
+    private static NXTUSBBTConnector nxtusbbtcon = null;
+    private static ConnectionView view = null;
+    private static UIController<?> controller = null;
+
+    private static boolean startupFinish = false;
+
     public static void main(String[] args) {
 
         configureLogger();
@@ -40,13 +48,13 @@ public class Main {
                 prepareUI();
                 ResourceBundle messages = getLocals();
                 ResourceBundle serverProps = getServerProps();
-                EV3USBConnector ev3usbcon = new EV3USBConnector(serverProps);
+                ev3usbcon = new EV3USBConnector(serverProps);
+                nxtusbbtcon = new NXTUSBBTConnector(serverProps);
 
-                ConnectionView view = new ConnectionView(messages);
-                UIController<?> controller = new UIController<Object>(ev3usbcon, view, messages);
-                controller.control();
-                Thread thread = new Thread(ev3usbcon);
-                thread.start();
+                view = new ConnectionView(messages);
+                controller = new UIController<Object>(view, messages);
+
+                startupFinish = true;
             }
 
             private void prepareUI() {
@@ -83,6 +91,31 @@ public class Main {
                 return rb;
             }
         });
+
+        Thread t = null;
+        while ( true ) {
+            if ( startupFinish ) {
+                if ( nxtusbbtcon.findRobot() ) {
+                    log.info("NXT found!");
+                    controller.setConnector(nxtusbbtcon);
+                    t = new Thread(nxtusbbtcon);
+                    t.start();
+                    break;
+                } else if ( ev3usbcon.findRobot() ) {
+                    log.info("EV found!");
+                    controller.setConnector(ev3usbcon);
+                    t = new Thread(ev3usbcon);
+                    t.start();
+                    break;
+                }
+            } else {
+                try {
+                    Thread.sleep(200);
+                } catch ( InterruptedException e ) {
+                    // ok
+                }
+            }
+        }
     }
 
     /**

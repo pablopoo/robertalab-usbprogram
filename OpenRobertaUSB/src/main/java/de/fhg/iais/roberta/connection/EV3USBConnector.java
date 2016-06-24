@@ -28,7 +28,7 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
     private final String serverAddress;
 
     private final EV3Communicator ev3comm;
-    private final ServerCommunicator servcomm;
+    private ServerCommunicator servcomm;
 
     private JSONObject brickData = null;
 
@@ -61,14 +61,36 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
         this.serverAddress = this.serverIp + ":" + this.serverPort;
 
         log.config("Robot ip " + this.brickIp);
-        log.config("Server address " + this.serverAddress);
 
         this.ev3comm = new EV3Communicator(this.brickIp);
+
+    }
+
+    @Override
+    public boolean findRobot() {
+        try {
+            if ( this.ev3comm.checkBrickState().equals("false") ) { // false ^= no program is running
+                log.info("EV3 available");
+                return true;
+            } else {
+                log.info("EV3 is executing a program");
+                return false;
+            }
+        } catch ( IOException e ) {
+            log.info("No EV3 device connected yet");
+            return false;
+        }
+    }
+
+    private void setupServerCommunicator() {
         this.servcomm = new ServerCommunicator(this.serverAddress);
     }
 
     @Override
     public void run() {
+        log.config("Starting EV3 Connector Thread.");
+        setupServerCommunicator();
+        log.config("Server address " + this.serverAddress);
         while ( true ) {
             switch ( this.state ) {
                 case DISCOVER:
