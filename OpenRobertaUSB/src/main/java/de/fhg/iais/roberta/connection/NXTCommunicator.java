@@ -68,16 +68,17 @@ public class NXTCommunicator {
 
     public JSONObject getDeviceInfo() throws IOException {
         JSONObject deviceInfo = new JSONObject();
-        deviceInfo.put("firmwarename", "lejos");
-        //deviceInfo.put("firmwareversion", this.nxtCommand.getFirmwareVersion().firmwareVersion);
-        deviceInfo.put("firmwareversion", "0.9.0-beta");
-        deviceInfo.put("battery", new DecimalFormat("#.#").format(((float) this.nxtCommand.getBatteryLevel()) / 1000));
-        deviceInfo.put("menuversion", "1.4.0");
-        //deviceInfo.put("protocolversion", this.nxtCommand.getFirmwareVersion().protocolVersion);
-        //deviceInfo.put("localaddress", this.nxtCommand.getLocalAddress());
+  
+        deviceInfo.put("firmwarename", "NXT");
+        deviceInfo.put("firmwareversion", this.nxtCommand.getFirmwareVersion().firmwareVersion);
         DeviceInfo info = this.nxtCommand.getDeviceInfo();
         deviceInfo.put("macaddr", info.bluetoothAddress);
         deviceInfo.put("brickname", info.NXTname.trim());
+        deviceInfo.put("battery", new DecimalFormat("#.#").format(((float) this.nxtCommand.getBatteryLevel()) / 1000));
+        deviceInfo.put("menuversion", "1.4.0");
+        //deviceInfo.put("protocolversion", this.nxtCommand.getFirmwareVersion().protocolVersion);
+        //deviceInfo.put("connectionType", (this.protocol==1) ? "USB" : "Bluetooth");
+        //deviceInfo.put("localaddress", this.nxtCommand.getLocalAddress());
         //deviceInfo.put("freeflash", info.freeFlash);
         //deviceInfo.put("signalstrength", info.signalStrength);
         return deviceInfo;
