@@ -1,5 +1,7 @@
 package lejos.internal.jni;
 
+import java.io.File;
+
 /**
  * This class handles the reference to the native libraries. The fixed folder structure from leJOS is removed completely. We load our native libraries from
  * maven src.main.resources.
@@ -25,9 +27,11 @@ public class JNILoader {
      * @throws JNIException file not found most likely
      */
     public void loadLibrary(Class<?> caller, String libname) throws JNIException {
-        //        String test = JNILoader.class.getClassLoader().getResource(System.mapLibraryName(libname)).getPath();
-        //        System.out.println(test);
-        //        System.load(test);
-        System.load(JNILoader.class.getClassLoader().getResource(System.mapLibraryName(libname)).getPath());
+                String test = JNILoader.class.getClassLoader().getResource(System.mapLibraryName(libname)).getPath();
+                System.out.println(test);
+                File t = new File(test);
+                System.out.println(t.getAbsolutePath());
+                System.load(t.getAbsolutePath());
+        //System.load(JNILoader.class.getClassLoader().getResource(System.mapLibraryName(libname)).getPath());
     }
 }
