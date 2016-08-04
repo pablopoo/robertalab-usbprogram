@@ -1,6 +1,9 @@
 package lejos.internal.jni;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * This class handles the reference to the native libraries. The fixed folder structure from leJOS is removed completely. We load our native libraries from
@@ -25,13 +28,24 @@ public class JNILoader {
      * @param caller NXTCommFantom or NXTCommLibnxt
      * @param libname file name without extension, will be added by java.lang.System.mapLibraryName()
      * @throws JNIException file not found most likely
+     * @throws IOException 
      */
-    public void loadLibrary(Class<?> caller, String libname) throws JNIException {
-                String test = JNILoader.class.getClassLoader().getResource(System.mapLibraryName(libname)).getPath();
-                System.out.println(test);
-                File t = new File(test);
-                System.out.println(t.getAbsolutePath());
-                System.load(t.getAbsolutePath());
-        //System.load(JNILoader.class.getClassLoader().getResource(System.mapLibraryName(libname)).getPath());
+    public void loadLibrary(Class<?> caller, String libname) throws JNIException, IOException {
+    	        InputStream in = JNILoader.class.getClassLoader().getResourceAsStream(System.mapLibraryName(libname));
+    	        byte[] buffer = new byte[1024];
+    	        int read = -1;
+    	        File temp = File.createTempFile(libname, "");
+    	        FileOutputStream fos = new FileOutputStream(temp);
+
+    	        while((read = in.read(buffer)) != -1) {
+    	            fos.write(buffer, 0, read);
+    	        }
+    	        fos.close();
+    	        in.close();
+
+    	        System.load(temp.getAbsolutePath());
     }
+    
+  
+    
 }
