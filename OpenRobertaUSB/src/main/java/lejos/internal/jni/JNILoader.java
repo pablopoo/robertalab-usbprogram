@@ -1,9 +1,10 @@
 package lejos.internal.jni;
 
-import java.io.File;
-import java.io.FileOutputStream;
+
 import java.io.IOException;
-import java.io.InputStream;
+
+
+import de.fhg.iais.roberta.util.NativeUtils;
 
 /**
  * This class handles the reference to the native libraries. The fixed folder structure from leJOS is removed completely. We load our native libraries from
@@ -31,19 +32,7 @@ public class JNILoader {
      * @throws IOException 
      */
     public void loadLibrary(Class<?> caller, String libname) throws JNIException, IOException {
-    	        InputStream in = JNILoader.class.getClassLoader().getResourceAsStream(System.mapLibraryName(libname));
-    	        byte[] buffer = new byte[1024];
-    	        int read = -1;
-    	        File temp = File.createTempFile(libname, "");
-    	        FileOutputStream fos = new FileOutputStream(temp);
-
-    	        while((read = in.read(buffer)) != -1) {
-    	            fos.write(buffer, 0, read);
-    	        }
-    	        fos.close();
-    	        in.close();
-
-    	        System.load(temp.getAbsolutePath());
+    	       NativeUtils.loadLibraryFromJar("/"+System.mapLibraryName(libname));
     }
     
   
