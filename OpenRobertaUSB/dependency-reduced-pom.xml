@@ -27,19 +27,6 @@
         <version>2.9</version>
         <executions>
           <execution>
-            <id>copy-dependencies</id>
-            <phase>pre-integration-test</phase>
-            <goals>
-              <goal>copy-dependencies</goal>
-            </goals>
-            <configuration>
-              <includeScope>compile</includeScope>
-              <outputDirectory>${project.build.directory}/lib</outputDirectory>
-              <overWriteReleases>true</overWriteReleases>
-              <overWriteSnapshots>true</overWriteSnapshots>
-            </configuration>
-          </execution>
-          <execution>
             <id>copyServer</id>
             <phase>pre-integration-test</phase>
             <goals>
@@ -66,24 +53,6 @@
       <plugin>
         <artifactId>maven-resources-plugin</artifactId>
         <version>2.7</version>
-        <executions>
-          <execution>
-            <id>copy-resources</id>
-            <phase>install</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${basedir}/USBinstaller/Windows</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>${project.build.directory}</directory>
-                  <include>lib/*.*</include>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
         <dependencies>
           <dependency>
             <groupId>org.apache.maven.shared</groupId>
