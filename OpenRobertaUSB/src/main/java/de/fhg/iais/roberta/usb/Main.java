@@ -18,6 +18,7 @@ import org.apache.commons.lang3.SystemUtils;
 
 import de.fhg.iais.roberta.connection.EV3USBConnector;
 import de.fhg.iais.roberta.connection.NXTUSBBTConnector;
+import de.fhg.iais.roberta.connection.ArduUSBConnector;
 import de.fhg.iais.roberta.ui.ConnectionView;
 import de.fhg.iais.roberta.ui.UIController;
 import de.fhg.iais.roberta.util.ORAFormatter;
@@ -33,6 +34,8 @@ public class Main {
 
     private static EV3USBConnector ev3usbcon = null;
     private static NXTUSBBTConnector nxtusbbtcon = null;
+    private static ArduUSBConnector arduusbcon = null;
+    
     private static ConnectionView view = null;
     private static UIController<?> controller = null;
 
@@ -50,7 +53,7 @@ public class Main {
                 ResourceBundle serverProps = getServerProps();
                 ev3usbcon = new EV3USBConnector(serverProps);
                 nxtusbbtcon = new NXTUSBBTConnector(serverProps);
-
+                arduusbcon =  new ArduUSBConnector(serverProps);
                 view = new ConnectionView(messages);
                 controller = new UIController<Object>(view, messages);
 
@@ -107,6 +110,14 @@ public class Main {
                     t = new Thread(ev3usbcon);
                     t.start();
                     break;
+                }
+                else if( arduusbcon.findRobot() )
+                {
+                	  log.info("Arduino Found!");
+                      controller.setConnector(arduusbcon);
+                      t = new Thread(arduusbcon);
+                      t.start();
+                	break;
                 }
             } else {
                 try {
