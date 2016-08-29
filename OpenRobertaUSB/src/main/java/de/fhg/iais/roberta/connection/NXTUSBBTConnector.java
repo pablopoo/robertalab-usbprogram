@@ -1,8 +1,6 @@
 package de.fhg.iais.roberta.connection;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Observable;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -209,11 +207,9 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
                             case CMD_DOWNLOAD:
                                 log.info("Download user program");
                                 try {
-                                    // TODO since we do not have nxt files on our server, download a lejos ev3 file but do nothing with it.
-                                    // Load another file instead, (TestNBCprogram.rxe) from top level directory of the project.
                                     byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
                                     String filename = this.servcomm.getFilename();
-//                                    File file = new File("TestNBCprogram.rxe");
+
                                     this.nxtcomm.connect();
                                     this.nxtcomm.uploadAndRunFile(binaryfile, filename);
                                     this.nxtcomm.disconnect();

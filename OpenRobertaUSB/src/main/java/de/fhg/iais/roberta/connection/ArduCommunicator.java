@@ -2,6 +2,7 @@ package de.fhg.iais.roberta.connection;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.ProcessBuilder.Redirect;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
@@ -23,21 +24,19 @@ public class ArduCommunicator {
         this.connOptions = "";
     }
 
-    public void connect() {
+    public void connect() throws SerialPortException {
         this.serialPort = new SerialPort(this.portName);
         if ( this.serialPort.isOpened() == false ) {
-            try {
-                this.serialPort.openPort();// Open serial port
-                this.serialPort.setParams(SerialPort.BAUDRATE_9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
-            } catch ( SerialPortException ex ) {
-                System.out.println(ex);
-            }
+            this.serialPort.openPort();// Open serial port
+            this.serialPort.setParams(SerialPort.BAUDRATE_9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
         }
     }
 
     public void disconnect() {
         try {
-            this.serialPort.closePort();
+            if ( this.serialPort.isOpened() ) {
+                this.serialPort.closePort();
+            }
         } catch ( SerialPortException ex ) {
             System.out.println(ex);
         }
@@ -48,10 +47,10 @@ public class ArduCommunicator {
         String userdir = System.getProperty("user.dir") + File.separator;
 
         if ( SystemUtils.IS_OS_WINDOWS ) {
-            this.avrConfPath = new String("\"C:\\Users\\bagridag\\Downloads\\OpenRoberta\\Arduino\\hardware\\tools\\avr\\etc\\avrdude.conf\"");
+            this.avrConfPath = new String("./resources/windows/arduino/avrdude.conf");
             // avrConfPath = new String(userdir + "hardware/tools/avr/etc/avrdude.conf");
             // avrPath= new String(userdir + "hardware/tools/avr/bin/");
-            this.avrPath = new String("\"C:\\Users\\bagridag\\Downloads\\OpenRoberta\\Arduino\\hardware\\tools\\avr\\bin\\avrdude\"");
+            this.avrPath = new String("./resources/windows/arduino/avrdude.exe");
         } else if ( SystemUtils.IS_OS_LINUX ) {
             this.avrConfPath = new String("hardware/tools/avrdude.conf");
             this.avrPath = new String("hardware/tools/");
@@ -67,7 +66,7 @@ public class ArduCommunicator {
         JSONObject deviceInfo = new JSONObject();
 
         deviceInfo.put("firmwarename", "Arduino");
-
+        deviceInfo.put("robot", "ardu");
         deviceInfo.put("firmwareversion", "1.1.1");
         deviceInfo.put("macaddr", "0.121.99");
         deviceInfo.put("brickname", "Ardu");
@@ -97,12 +96,46 @@ public class ArduCommunicator {
         return !Arrays.equals(APROGRAMISRUNNING, this.nxtCommand.getCurrentProgramName().getBytes());
     }*/
 
-    public void uploadFile(String portName, File FileName) throws IOException, InterruptedException {
+    public void uploadFile(String portName, String filePath) throws IOException, InterruptedException {
         setParameters();
         String command;
-        command = this.avrPath + " -C " + this.avrConfPath + this.connOptions + " -Uflash:w:" + FileName + ":i";
-        Process proc = Runtime.getRuntime().exec(command);
-        proc.waitFor();
+        command =
+            this.avrPath
+                + " -C "
+                + this.avrConfPath
+                + this.connOptions
+                + "-P"
+                + portName
+                + " -Uflash:w:"
+                + "C:/dev/OpenRoberta/gitWorkspaces/robertalab-usbprogram/OpenRobertaUSB/"
+                + filePath
+                + ":i";
+
+        try {
+            ProcessBuilder procBuilder = new ProcessBuilder(new String[] {
+                this.avrPath,
+                "-v",
+                "-D",
+                "-pm328p",
+                "-carduino",
+                "-Uflash:w:./" + filePath,
+                "-P" + portName
+
+                //                "-C " + this.avrConfPath
+            });
+
+            procBuilder.redirectInput(Redirect.INHERIT);
+            procBuilder.redirectOutput(Redirect.INHERIT);
+            procBuilder.redirectError(Redirect.INHERIT);
+            Process p = procBuilder.start();
+            int ecode = p.waitFor();
+            System.err.println("Exit code " + ecode);
+
+        } catch ( Exception e ) {
+
+            e.printStackTrace();
+
+        }
 
     }
 

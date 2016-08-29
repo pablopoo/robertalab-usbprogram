@@ -1,6 +1,6 @@
 package de.fhg.iais.roberta.connection;
 
-import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Observable;
 import java.util.ResourceBundle;
@@ -9,8 +9,8 @@ import java.util.logging.Logger;
 import org.json.JSONObject;
 
 import de.fhg.iais.roberta.util.ORAtokenGenerator;
+import jssc.SerialPortException;
 import jssc.SerialPortList;
-import lejos.pc.comm.NXTInfo;
 
 public class ArduUSBConnector extends Observable implements Runnable, Connector {
 
@@ -51,29 +51,20 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
             switch ( this.state ) {
                 case DISCOVER:
 
-                    NXTInfo[] nxts = NXTCommunicator.discover();
-
                     this.portNames = SerialPortList.getPortNames(); //search arduino in port names instead
-                    /* System.out.println("The following serial ports were found:");
-                    
-                    // Display each port name to the console.
-                    for(int i=0; i<portNames.length; i++)
-                    {
-                       	System.out.println(portNames[i]);
-                    }*/
 
                     if ( (this.portNames.length > 0) ) {
                         try {
                             // TODO let user choose which one to connect?
-                            this.arducomm = new ArduCommunicator(this.portNames[0]);
+                            this.arducomm = new ArduCommunicator(this.portNames[this.portNames.length - 1]);
                             this.arducomm.connect();
                             this.state = State.WAIT_FOR_CONNECT;
                             notifyConnectionStateChanged(this.state);
                             break;
 
-                        }
-
-                        finally {
+                        } catch ( SerialPortException e ) {
+                            //                            e.printStackTrace();
+                        } finally {
                             this.arducomm.disconnect();
                             try {
                                 Thread.sleep(1000);
@@ -91,48 +82,44 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                     }
                     break;
                 case WAIT_EXECUTION:
-                    //                    this.state = State.WAIT_EXECUTION;
-                    //                    notifyConnectionStateChanged(this.state);
-                    //                    try {
-                    //                        this.nxtcomm.connect();
-                    //                        if ( !this.nxtcomm.isProgramRunning() ) {
-                    //                            log.info("Program execution finished - enter WAIT_FOR_CMD state again");
-                    //                            this.state = State.WAIT_FOR_CMD;
-                    //                            notifyConnectionStateChanged(this.state);
-                    //                            break;
-                    //                        } else {
-                    //                            log.info("Program is running - Cable is plugged in (WAIT_EXECUTION)");
-                    //                        }
-                    //                    } catch ( NXTCommException | IOException e ) {
-                    //                        log.info("Program is running - cable is not plugged in (WAIT_EXECUTION)");
-                    //                    } finally {
-                    //                        this.nxtcomm.disconnect();
-                    //                        try {
-                    //                            Thread.sleep(1000);
-                    //                        } catch ( InterruptedException ee ) {
-                    //                            // ok
-                    //                        }
-                    //                    }
+                    this.state = State.WAIT_EXECUTION;
+                    notifyConnectionStateChanged(this.state);
+                    try {
+                        this.arducomm.connect();
+                        //                        if ( !this.nxtcomm.isProgramRunning() ) {
+                        //                            log.info("Program execution finished - enter WAIT_FOR_CMD state again");
+                        this.state = State.WAIT_FOR_CMD;
+                        notifyConnectionStateChanged(this.state);
+                        //                            break;
+                        //                        } else {
+                        //                            log.info("Program is running - Cable is plugged in (WAIT_EXECUTION)");
+                        //                        }
+                    } catch ( SerialPortException e ) {
+                        log.info("Program is running - cable is not plugged in (WAIT_EXECUTION)");
+                    } finally {
+                        this.arducomm.disconnect();
+                        try {
+                            Thread.sleep(1000);
+                        } catch ( InterruptedException ee ) {
+                            // ok
+                        }
+                    }
                     break;
                 case WAIT_FOR_CONNECT:
                     //                    // GUI initiates changing state to CONNECT
-                    //                    try {
-                    //                        this.nxtcomm.connect();
-                    //                        if ( this.nxtcomm.isProgramRunning() ) {
-                    //                            reset(null, false);
-                    //                            break;
-                    //                        }
-                    //                    } catch ( IOException | NXTCommException e ) {
-                    //                        log.info("WAIT_FOR_CONNECT " + e.getMessage());
-                    //                        reset(null, false);
-                    //                    } finally {
-                    //                        this.nxtcomm.disconnect();
-                    //                        try {
-                    //                            Thread.sleep(1000);
-                    //                        } catch ( InterruptedException e ) {
-                    //                            // ok
-                    //                        }
-                    //                    }
+                    try {
+                        this.arducomm.connect();
+                    } catch ( SerialPortException e ) {
+                        log.info("WAIT_FOR_CONNECT " + e.getMessage());
+                        reset(null, false);
+                    } finally {
+                        this.arducomm.disconnect();
+                        try {
+                            Thread.sleep(1000);
+                        } catch ( InterruptedException e ) {
+                            // ok
+                        }
+                    }
                     break;
                 case CONNECT:
                     this.token = ORAtokenGenerator.generateToken();
@@ -143,7 +130,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         this.brickData = this.arducomm.getDeviceInfo();
                         this.brickData.put(KEY_TOKEN, this.token);
                         this.brickData.put(KEY_CMD, CMD_REGISTER);
-                    } catch ( IOException e ) {
+                    } catch ( IOException | SerialPortException e ) {
                         log.info("CONNECT " + e.getMessage());
                         break;
                     }
@@ -166,7 +153,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         }
                     } catch ( IOException | RuntimeException e ) {
                         log.info("CONNECT " + e.getMessage());
-                        //   reset(State.ERROR_HTTP, false);
+                        reset(State.ERROR_HTTP, false);
                     } finally {
                         this.arducomm.disconnect();
                     }
@@ -178,9 +165,9 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         this.brickData.put(KEY_TOKEN, this.token);
                         this.brickData.put(KEY_CMD, CMD_PUSH);
                         this.arducomm.disconnect();
-                    } catch ( IOException e ) {
+                    } catch ( IOException | SerialPortException e ) {
                         log.info("WAIT_FOR_CMD " + e.getMessage());
-                        // reset(State.ERROR_BRICK, true);
+                        reset(State.ERROR_BRICK, true);
                         break;
                     }
                     try {
@@ -190,14 +177,15 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                             case CMD_DOWNLOAD:
                                 log.info("Download user program");
                                 try {
-                                    // TODO since we do not have nxt files on our server, download a lejos ev3 file but do nothing with it.
-                                    // Load another file instead, (TestNBCprogram.rxe) from top level directory of the project.
-                                    //byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
-                                    // String filename = this.servcomm.getFilename();
-                                    File file = new File("NEPOprog.ino.hex");
-                                    this.arducomm.connect();
-                                    this.arducomm.uploadFile(this.portNames[0], file);
-                                    this.arducomm.disconnect();
+                                    byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
+                                    String filename = this.servcomm.getFilename();
+                                    FileOutputStream stream = new FileOutputStream(filename);
+                                    try {
+                                        stream.write(binaryfile);
+                                    } finally {
+                                        stream.close();
+                                    }
+                                    this.arducomm.uploadFile(this.portNames[3], filename);
                                     this.state = State.WAIT_EXECUTION;
                                 } catch ( IOException | InterruptedException e ) {
                                     log.info("Download and run failed: " + e.getMessage());
@@ -215,7 +203,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         }
                     } catch ( RuntimeException | IOException e ) {
                         log.info("WAIT_FOR_CMD " + e.getMessage());
-                        //   reset(State.ERROR_HTTP, true);
+                        reset(State.ERROR_HTTP, true);
                     } finally {
                         log.info("Push request finished");
                         this.arducomm.disconnect();
@@ -232,12 +220,12 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
      *
      * @param additionalerrormessage message for popup
      */
-    /* private void reset(State additionalerrormessage, boolean playDisconnectSound) {
+    private void reset(State additionalerrormessage, boolean playDisconnectSound) {
         if ( playDisconnectSound ) {
             try {
                 this.arducomm.connect();
-                this.arducomm.playDescending();
-            } catch ( IOException | NXTCommException e ) {
+                //                //                this.arducomm.playDescending();
+            } catch ( SerialPortException e ) {
                 log.info("reset - Play descending failed");
             }
         }
@@ -249,7 +237,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
         this.state = State.DISCOVER;
         notifyConnectionStateChanged(this.state);
     }
-    */
+
     @Override
     public void connect() {
         this.state = State.CONNECT;
@@ -308,18 +296,15 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     @Override
     public boolean findRobot() {
-
         this.portNames = SerialPortList.getPortNames(); //search arduino in port names instead
         if ( (this.portNames.length > 0) ) {
             return true;
-
         }
         return false;
     }
 
     @Override
     public String getBrickName() {
-        // TODO Auto-generated method stub
         return "Ardu";
     }
 

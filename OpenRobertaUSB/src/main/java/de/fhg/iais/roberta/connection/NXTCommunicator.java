@@ -68,8 +68,9 @@ public class NXTCommunicator {
 
     public JSONObject getDeviceInfo() throws IOException {
         JSONObject deviceInfo = new JSONObject();
-  
+
         deviceInfo.put("firmwarename", "NXT");
+        deviceInfo.put("robot", "nxt");
         deviceInfo.put("firmwareversion", this.nxtCommand.getFirmwareVersion().firmwareVersion);
         DeviceInfo info = this.nxtCommand.getDeviceInfo();
         deviceInfo.put("macaddr", info.bluetoothAddress);
@@ -141,8 +142,6 @@ public class NXTCommunicator {
             Thread.sleep(200);
         }
     }
-    
-    
 
     public void disconnect() {
         try {
