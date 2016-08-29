@@ -118,7 +118,7 @@ public class ArduCommunicator {
                 "-D",
                 "-pm328p",
                 "-carduino",
-                "-Uflash:w:./" + filePath,
+                "-Uflash:w:" + filePath + ":i",
                 "-P" + portName
 
                 //                "-C " + this.avrConfPath

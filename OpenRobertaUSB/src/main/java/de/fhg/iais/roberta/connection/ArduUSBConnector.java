@@ -1,5 +1,7 @@
 package de.fhg.iais.roberta.connection;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Observable;
@@ -179,13 +181,22 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                                 try {
                                     byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
                                     String filename = this.servcomm.getFilename();
-                                    FileOutputStream stream = new FileOutputStream(filename);
-                                    try {
-                                        stream.write(binaryfile);
-                                    } finally {
-                                        stream.close();
+                                    File temp = File.createTempFile(filename, "");
+
+                                    temp.deleteOnExit();
+
+                                    if ( !temp.exists() ) {
+                                        throw new FileNotFoundException("File " + temp.getAbsolutePath() + " does not exist.");
                                     }
-                                    this.arducomm.uploadFile(this.portNames[3], filename);
+
+                                    FileOutputStream os = new FileOutputStream(temp);
+                                    try {
+                                        os.write(binaryfile);
+                                    } finally {
+                                        os.close();
+                                    }
+
+                                    this.arducomm.uploadFile(this.portNames[this.portNames.length - 1], temp.getAbsolutePath());
                                     this.state = State.WAIT_EXECUTION;
                                 } catch ( IOException | InterruptedException e ) {
                                     log.info("Download and run failed: " + e.getMessage());
