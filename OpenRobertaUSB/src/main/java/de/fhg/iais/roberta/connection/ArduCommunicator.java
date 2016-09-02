@@ -139,4 +139,8 @@ public class ArduCommunicator {
 
     }
 
+    public boolean isConnected() {
+        return this.serialPort.isOpened();
+    }
+
 }

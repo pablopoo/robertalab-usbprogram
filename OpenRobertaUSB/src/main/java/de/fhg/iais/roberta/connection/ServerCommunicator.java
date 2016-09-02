@@ -9,7 +9,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
@@ -68,6 +67,7 @@ public class ServerCommunicator {
     public JSONObject pushRequest(JSONObject requestContent) throws IOException {
         this.post = new HttpPost("http://" + this.serverpushAddress);
         StringEntity requestEntity = new StringEntity(requestContent.toString(), ContentType.create("application/json", "UTF-8"));
+        System.out.println(requestContent.toString());
         this.post.setEntity(requestEntity);
 
         CloseableHttpResponse response = this.httpclient.execute(this.post);

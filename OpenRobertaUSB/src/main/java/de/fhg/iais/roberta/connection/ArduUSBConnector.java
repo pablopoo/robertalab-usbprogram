@@ -88,14 +88,14 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                     notifyConnectionStateChanged(this.state);
                     try {
                         this.arducomm.connect();
-                        //                        if ( !this.nxtcomm.isProgramRunning() ) {
-                        //                            log.info("Program execution finished - enter WAIT_FOR_CMD state again");
-                        this.state = State.WAIT_FOR_CMD;
-                        notifyConnectionStateChanged(this.state);
-                        //                            break;
-                        //                        } else {
-                        //                            log.info("Program is running - Cable is plugged in (WAIT_EXECUTION)");
-                        //                        }
+                        if ( this.arducomm.isConnected() ) {
+                            log.info("Program execution finished - enter WAIT_FOR_CMD state again");
+                            this.state = State.WAIT_FOR_CMD;
+                            notifyConnectionStateChanged(this.state);
+                            break;
+                        } else {
+                            log.info("Program is running - Cable is plugged in (WAIT_EXECUTION)");
+                        }
                     } catch ( SerialPortException e ) {
                         log.info("Program is running - cable is not plugged in (WAIT_EXECUTION)");
                     } finally {
@@ -169,7 +169,8 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         this.arducomm.disconnect();
                     } catch ( IOException | SerialPortException e ) {
                         log.info("WAIT_FOR_CMD " + e.getMessage());
-                        reset(State.ERROR_BRICK, true);
+                        this.state = State.WAIT_EXECUTION;
+                        //                        reset(State.ERROR_BRICK, true);
                         break;
                     }
                     try {
