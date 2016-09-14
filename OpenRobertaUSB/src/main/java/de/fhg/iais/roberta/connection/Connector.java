@@ -10,8 +10,8 @@ public interface Connector {
 
     public enum State {
         DISCOVER,
-        WAIT_FOR_CONNECT,
-        CONNECT,
+        WAIT_FOR_CONNECT_BUTTON_PRESS,
+        CONNECT_BUTTON_IS_PRESSED,
         WAIT_FOR_CMD,
         WAIT_EXECUTION,
         DISCONNECT,
@@ -22,6 +22,7 @@ public interface Connector {
         ERROR_HTTP,
         ERROR_UPDATE,
         ERROR_BRICK,
+        ERROR_DOWNLOAD,
         TOKEN_TIMEOUT
     }
 
@@ -36,6 +37,7 @@ public interface Connector {
     static final String CMD_ABORT = "abort";
     static final String CMD_UPDATE = "update";
     static final String CMD_DOWNLOAD = "download";
+    static final String CMD_DOWNLOAD_RUN = "download_run";
     static final String CMD_CONFIGURATION = "configuration";
 
     /**

@@ -60,7 +60,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                             // TODO let user choose which one to connect?
                             this.arducomm = new ArduCommunicator(this.portNames[this.portNames.length - 1]);
                             this.arducomm.connect();
-                            this.state = State.WAIT_FOR_CONNECT;
+                            this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                             notifyConnectionStateChanged(this.state);
                             break;
 
@@ -107,7 +107,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         }
                     }
                     break;
-                case WAIT_FOR_CONNECT:
+                case WAIT_FOR_CONNECT_BUTTON_PRESS:
                     //                    // GUI initiates changing state to CONNECT
                     try {
                         this.arducomm.connect();
@@ -123,7 +123,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         }
                     }
                     break;
-                case CONNECT:
+                case CONNECT_BUTTON_IS_PRESSED:
                     this.token = ORAtokenGenerator.generateToken();
                     this.state = State.WAIT_FOR_SERVER;
                     notifyConnectionStateChanged(this.state);
@@ -252,7 +252,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     @Override
     public void connect() {
-        this.state = State.CONNECT;
+        this.state = State.CONNECT_BUTTON_IS_PRESSED;
     }
 
     @Override

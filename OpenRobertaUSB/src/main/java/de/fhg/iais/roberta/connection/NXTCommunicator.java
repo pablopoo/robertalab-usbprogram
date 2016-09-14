@@ -60,28 +60,30 @@ public class NXTCommunicator {
         return nxts;
     }
 
-    public void connect() throws NXTCommException {
+    private void connect() throws NXTCommException {
         this.nxtCommunication = NXTCommFactory.createNXTComm(this.protocol);
         this.nxtCommunication.open(this.nxt, NXTComm.LCP);
         this.nxtCommand = new NXTCommand(this.nxtCommunication);
     }
 
-    public JSONObject getDeviceInfo() throws IOException {
+    public JSONObject getDeviceInfo() {
         JSONObject deviceInfo = new JSONObject();
+        try {
+            connect();
+            DeviceInfo info = this.nxtCommand.getDeviceInfo();
 
-        deviceInfo.put("firmwarename", "NXT");
-        deviceInfo.put("robot", "nxt");
-        deviceInfo.put("firmwareversion", this.nxtCommand.getFirmwareVersion().firmwareVersion);
-        DeviceInfo info = this.nxtCommand.getDeviceInfo();
-        deviceInfo.put("macaddr", info.bluetoothAddress);
-        deviceInfo.put("brickname", info.NXTname.trim());
-        deviceInfo.put("battery", new DecimalFormat("#.#").format(((float) this.nxtCommand.getBatteryLevel()) / 1000));
-        deviceInfo.put("menuversion", "1.4.0");
-        //deviceInfo.put("protocolversion", this.nxtCommand.getFirmwareVersion().protocolVersion);
-        //deviceInfo.put("connectionType", (this.protocol==1) ? "USB" : "Bluetooth");
-        //deviceInfo.put("localaddress", this.nxtCommand.getLocalAddress());
-        //deviceInfo.put("freeflash", info.freeFlash);
-        //deviceInfo.put("signalstrength", info.signalStrength);
+            deviceInfo.put("firmwarename", "NXT");
+            deviceInfo.put("robot", "nxt");
+            deviceInfo.put("firmwareversion", this.nxtCommand.getFirmwareVersion().firmwareVersion);
+            deviceInfo.put("macaddr", info.bluetoothAddress);
+            deviceInfo.put("brickname", info.NXTname.trim());
+            deviceInfo.put("battery", new DecimalFormat("#.#").format(((float) this.nxtCommand.getBatteryLevel()) / 1000));
+
+        } catch ( IOException | NXTCommException e ) {
+            return null;
+        } finally {
+            disconnect();
+        }
         return deviceInfo;
     }
 
@@ -113,11 +115,33 @@ public class NXTCommunicator {
      * @return true if a program is currently running, false otherwise
      * @throws IOException
      */
-    public boolean isProgramRunning() throws IOException {
-        return !Arrays.equals(APROGRAMISRUNNING, this.nxtCommand.getCurrentProgramName().getBytes());
+    public NXTState getNXTstate() {
+        try {
+            connect();
+            boolean isRunning = !Arrays.equals(APROGRAMISRUNNING, this.nxtCommand.getCurrentProgramName().getBytes());
+            return isRunning ? NXTState.PROGRAM_RUNNING : NXTState.WAITING_FOR_PROGRAM;
+        } catch ( IOException | NXTCommException e ) {
+            return NXTState.DISCONNECTED;
+        } finally {
+            disconnect();
+        }
+
     }
 
     public void uploadFile(byte[] binaryfile, String nxtFileName) throws IOException {
+        if ( nxtFileName.length() > NXTCommand.MAX_FILENAMELENGTH ) {
+            nxtFileName = nxtFileName.substring(0, NXTCommand.MAX_FILENAMELENGTH - 1);
+        }
+        if ( getNXTstate() == NXTState.WAITING_FOR_PROGRAM ) {
+            this.nxtCommand.delete(nxtFileName);
+            sleep(200); // give the nxt time to react
+            writeFileToNXT(binaryfile, nxtFileName);
+            sleep(200);
+            // this.nxtCommand.startProgram(nxtFileName); this will execute the program but we do not want
+        }
+    }
+
+    private void writeFileToNXT(byte[] binaryfile, String nxtFileName) throws IOException {
         InputStream is = new ByteArrayInputStream(binaryfile);
         byte handle = this.nxtCommand.openWrite(nxtFileName, binaryfile.length);
         byte[] data = new byte[MAX_BUFFER_SIZE];
@@ -129,21 +153,7 @@ public class NXTCommunicator {
         this.nxtCommand.closeFile(handle);
     }
 
-    public void uploadAndRunFile(byte[] binaryfile, String nxtFileName) throws IOException, InterruptedException {
-        if ( nxtFileName.length() > NXTCommand.MAX_FILENAMELENGTH ) {
-            nxtFileName = nxtFileName.substring(0, NXTCommand.MAX_FILENAMELENGTH - 1);
-        }
-        if ( !isProgramRunning() ) {
-            this.nxtCommand.delete(nxtFileName);
-            Thread.sleep(200); // give the nxt time to react
-            uploadFile(binaryfile, nxtFileName);
-            Thread.sleep(200);
-            this.nxtCommand.startProgram(nxtFileName);
-            Thread.sleep(200);
-        }
-    }
-
-    public void disconnect() {
+    private void disconnect() {
         try {
             this.nxtCommand.close();
             this.nxtCommand.disconnect();
@@ -153,6 +163,14 @@ public class NXTCommunicator {
         try {
             this.nxtCommunication.close();
         } catch ( IOException | NullPointerException e ) {
+            // ok
+        }
+    }
+
+    private void sleep(int time) {
+        try {
+            Thread.sleep(time);
+        } catch ( InterruptedException e ) {
             // ok
         }
     }

@@ -98,7 +98,7 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                             case "true": // program is running
                                 break;
                             case "false": // brick available and no program running
-                                this.state = State.WAIT_FOR_CONNECT;
+                                this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                                 break;
                         }
                         Thread.sleep(1000);
@@ -127,7 +127,7 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                         log.info(State.WAIT_EXECUTION + " " + e.getMessage());
                     }
                     break;
-                case WAIT_FOR_CONNECT:
+                case WAIT_FOR_CONNECT_BUTTON_PRESS:
                     try {
                         switch ( this.ev3comm.checkBrickState() ) {
                             case "true":
@@ -142,13 +142,13 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                         }
                         Thread.sleep(1000);
                     } catch ( IOException brickerror ) {
-                        log.info(State.WAIT_FOR_CONNECT + " " + brickerror.getMessage());
+                        log.info(State.WAIT_FOR_CONNECT_BUTTON_PRESS + " " + brickerror.getMessage());
                         reset(null);
                     } catch ( InterruptedException e ) {
                         // ok
                     }
                     break;
-                case CONNECT:
+                case CONNECT_BUTTON_IS_PRESSED:
                     this.token = ORAtokenGenerator.generateToken();
                     this.state = State.WAIT_FOR_SERVER;
                     notifyConnectionStateChanged(State.WAIT_FOR_SERVER);
@@ -157,7 +157,7 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                         this.brickData.put(KEY_TOKEN, this.token);
                         this.brickData.put(KEY_CMD, CMD_REGISTER);
                     } catch ( IOException brickerror ) {
-                        log.info(State.CONNECT + " " + brickerror.getMessage());
+                        log.info(State.CONNECT_BUTTON_IS_PRESSED + " " + brickerror.getMessage());
                         reset(State.ERROR_BRICK);
                         break;
                     }
@@ -173,7 +173,7 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                                 try {
                                     this.brickData = this.ev3comm.pushToBrick(CMD_REPEAT);
                                 } catch ( IOException brickerror ) {
-                                    log.info(State.CONNECT + " " + brickerror.getMessage());
+                                    log.info(State.CONNECT_BUTTON_IS_PRESSED + " " + brickerror.getMessage());
                                     reset(State.ERROR_BRICK);
                                     break;
                                 }
@@ -184,12 +184,12 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                                 reset(State.TOKEN_TIMEOUT);
                                 break;
                             default:
-                                log.info(State.CONNECT + " Command " + command + " unknown");
+                                log.info(State.CONNECT_BUTTON_IS_PRESSED + " Command " + command + " unknown");
                                 reset(null);
                                 break;
                         }
                     } catch ( IOException servererror ) {
-                        log.info(State.CONNECT + " " + servererror.getMessage());
+                        log.info(State.CONNECT_BUTTON_IS_PRESSED + " " + servererror.getMessage());
                         reset(State.ERROR_HTTP);
                     }
                     break;
@@ -304,7 +304,7 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
 
     @Override
     public void connect() {
-        this.state = State.CONNECT;
+        this.state = State.CONNECT_BUTTON_IS_PRESSED;
     }
 
     @Override

@@ -147,7 +147,7 @@ public class UIController<ObservableObject> implements Observer {
     public void update(Observable arg0, Object arg1) {
         Connector.State state = (Connector.State) arg1;
         switch ( state ) {
-            case WAIT_FOR_CONNECT:
+            case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 //this.conView.setNew(this.connector.getBrickName());
                 this.conView.setWaitForConnect();
                 break;
@@ -174,6 +174,9 @@ public class UIController<ObservableObject> implements Observer {
                 break;
             case ERROR_HTTP:
                 ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("httpErrorInfo"), null);
+                break;
+            case ERROR_DOWNLOAD:
+                ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("downloadFail"), null);
                 break;
             case ERROR_BRICK:
                 ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("httpBrickInfo"), null);

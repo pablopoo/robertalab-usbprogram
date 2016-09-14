@@ -8,7 +8,6 @@ import java.util.logging.Logger;
 import org.json.JSONObject;
 
 import de.fhg.iais.roberta.util.ORAtokenGenerator;
-import lejos.pc.comm.NXTCommException;
 import lejos.pc.comm.NXTInfo;
 
 public class NXTUSBBTConnector extends Observable implements Runnable, Connector {
@@ -22,9 +21,9 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
     private NXTCommunicator nxtcomm;
     private ServerCommunicator servcomm;
 
-    private JSONObject brickData = null;
     private State state = State.DISCOVER; // First state when program starts
     private String token = "";
+    private String brickName = "";
     private boolean userDisconnect = false;
 
     public NXTUSBBTConnector(ResourceBundle serverProps) {
@@ -37,138 +36,65 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
 
     @Override
     public boolean findRobot() {
-        try {
-            NXTInfo[] nxts = NXTCommunicator.discover();
-            if ( nxts.length > 0 ) {
-                this.nxtcomm = new NXTCommunicator(nxts[0], nxts[0].protocol);
-                this.nxtcomm.connect();
-                boolean isRunningProgram = this.nxtcomm.isProgramRunning();
-                log.info("program is running: " + isRunningProgram);
-                this.nxtcomm.disconnect();
-                return !isRunningProgram;
-            } else {
-                log.info("No NXT device connected yet");
-                return false;
-            }
-        } catch ( NullPointerException | IOException | NXTCommException e ) {
-            log.info(e.getMessage());
-            return false;
-        }
-    }
-
-    private void setupServerCommunicator() {
-        this.servcomm = new ServerCommunicator(this.serverAddress);
+        DiscoverNXT discoverNXT = new DiscoverNXT();
+        return discoverNXT.discover();
     }
 
     @Override
     public void run() {
         log.config("Starting NXT Connector Thread.");
-        setupServerCommunicator();
+        this.servcomm = new ServerCommunicator(this.serverAddress);
         log.config("Server address " + this.serverAddress);
         while ( true ) {
             switch ( this.state ) {
                 case DISCOVER:
-                    NXTInfo[] nxts = NXTCommunicator.discover();
-                    if ( (nxts.length > 0) ) {
-                        try {
-                            // TODO let user choose which one to connect?
-                            this.nxtcomm = new NXTCommunicator(nxts[0], nxts[0].protocol);
-                            this.nxtcomm.connect();
-                            if ( !this.nxtcomm.isProgramRunning() ) {
-                                this.state = State.WAIT_FOR_CONNECT;
-                                notifyConnectionStateChanged(this.state);
-                                break;
-                            } else {
-                                log.info("NXT is running a program");
-                            }
-                        } catch ( NXTCommException | IOException e ) {
-                            log.info("DISCOVER " + e.getMessage());
-                        } finally {
-                            this.nxtcomm.disconnect();
-                            try {
-                                Thread.sleep(1000);
-                            } catch ( InterruptedException e ) {
-                                // ok
-                            }
-                        }
-                    } else {
-                        log.info("No NXT device connected");
-                        try {
-                            Thread.sleep(1000);
-                        } catch ( InterruptedException e ) {
-                            // ok
-                        }
-                    }
-                    break;
-                case WAIT_EXECUTION:
-                    this.state = State.WAIT_EXECUTION;
-                    notifyConnectionStateChanged(this.state);
-                    try {
-                        this.nxtcomm.connect();
-                        if ( !this.nxtcomm.isProgramRunning() ) {
-                            log.info("Program execution finished - enter WAIT_FOR_CMD state again");
-                            this.state = State.WAIT_FOR_CMD;
+                    DiscoverNXT discoverNXT = new DiscoverNXT();
+                    if ( discoverNXT.discover() ) {
+                        this.nxtcomm = discoverNXT.createCommunicator();
+                        NXTState nxtState = this.nxtcomm.getNXTstate();
+                        if ( nxtState != NXTState.PROGRAM_RUNNING ) {
+                            this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                             notifyConnectionStateChanged(this.state);
                             break;
                         } else {
-                            log.info("Program is running - Cable is plugged in (WAIT_EXECUTION)");
+                            //TODO show popup to the user with "program is running information"
+                            log.info("NXT is running a program");
                         }
-                    } catch ( NXTCommException | IOException e ) {
-                        log.info("Program is running - cable is not plugged in (WAIT_EXECUTION)");
-                    } finally {
-                        this.nxtcomm.disconnect();
-                        try {
-                            Thread.sleep(1000);
-                        } catch ( InterruptedException ee ) {
-                            // ok
-                        }
+                    } else {
+                        log.info("No NXT device connected");
                     }
+                    sleepUntilNextStep(1000);
                     break;
-                case WAIT_FOR_CONNECT:
+                case WAIT_FOR_CONNECT_BUTTON_PRESS:
                     // GUI initiates changing state to CONNECT
-                    try {
-                        this.nxtcomm.connect();
-                        if ( this.nxtcomm.isProgramRunning() ) {
-                            reset(null, false);
-                            break;
-                        }
-                    } catch ( IOException | NXTCommException e ) {
-                        log.info("WAIT_FOR_CONNECT " + e.getMessage());
-                        reset(null, false);
-                    } finally {
-                        this.nxtcomm.disconnect();
-                        try {
-                            Thread.sleep(1000);
-                        } catch ( InterruptedException e ) {
-                            // ok
-                        }
+                    NXTState nxtState = this.nxtcomm.getNXTstate();
+                    if ( nxtState == NXTState.PROGRAM_RUNNING || nxtState == NXTState.DISCONNECTED ) {
+                        reset(null);
+                        log.info("RESET CONNECTION BECAUSE " + nxtState);
+                        break;
                     }
+                    sleepUntilNextStep(1000);
                     break;
-                case CONNECT:
+                case CONNECT_BUTTON_IS_PRESSED:
                     this.token = ORAtokenGenerator.generateToken();
                     this.state = State.WAIT_FOR_SERVER;
                     notifyConnectionStateChanged(this.state);
-                    try {
-                        this.nxtcomm.connect();
-                        this.brickData = this.nxtcomm.getDeviceInfo();
-                        this.brickData.put(KEY_TOKEN, this.token);
-                        this.brickData.put(KEY_CMD, CMD_REGISTER);
-                    } catch ( IOException | NXTCommException e ) {
-                        log.info("CONNECT " + e.getMessage());
-                        reset(State.ERROR_BRICK, false);
+                    JSONObject deviceInfo = this.nxtcomm.getDeviceInfo();
+                    if ( deviceInfo == null ) {
+                        reset(State.ERROR_BRICK);
                         break;
                     }
+                    deviceInfo.put(KEY_TOKEN, this.token);
+                    deviceInfo.put(KEY_CMD, CMD_REGISTER);
+                    this.brickName = deviceInfo.getString("brickname");
                     try {
-                        JSONObject serverResponse = this.servcomm.pushRequest(this.brickData);
+                        //Blocks until the server returns command in its response
+                        JSONObject serverResponse = this.servcomm.pushRequest(deviceInfo);
                         String command = serverResponse.getString("cmd");
                         switch ( command ) {
                             case CMD_REPEAT:
-                                try {
-                                    log.info("registration successful");
-                                    this.nxtcomm.playAscending();
-                                } catch ( IOException e ) {
-                                    log.info("registration - playing sound sequence failed");
-                                }
+                                log.info("registration successful");
+                                playConnectionSound(true);
                                 this.state = State.WAIT_FOR_CMD;
                                 notifyConnectionStateChanged(this.state);
                                 break;
@@ -182,63 +108,108 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
                                 throw new RuntimeException("Unexpected command " + command + "from server");
                         }
                     } catch ( IOException | RuntimeException e ) {
-                        log.info("CONNECT " + e.getMessage());
-                        reset(State.ERROR_HTTP, false);
-                    } finally {
-                        this.nxtcomm.disconnect();
+                        log.info("SERVER COMMUNICATION ERROR " + e.getMessage());
+                        reset(State.ERROR_HTTP);
                     }
                     break;
                 case WAIT_FOR_CMD:
-                    try {
-                        this.nxtcomm.connect();
-                        this.brickData = this.nxtcomm.getDeviceInfo();
-                        this.brickData.put(KEY_TOKEN, this.token);
-                        this.brickData.put(KEY_CMD, CMD_PUSH);
-                        this.nxtcomm.disconnect();
-                    } catch ( IOException | NXTCommException e ) {
-                        log.info("WAIT_FOR_CMD " + e.getMessage());
-                        reset(State.ERROR_BRICK, true);
+                    JSONObject deviceInfoWaitCMD = this.nxtcomm.getDeviceInfo();
+                    if ( deviceInfoWaitCMD == null ) {
+                        reset(State.ERROR_BRICK);
                         break;
                     }
+                    deviceInfoWaitCMD.put(KEY_TOKEN, this.token);
+                    deviceInfoWaitCMD.put(KEY_CMD, CMD_REGISTER);
                     try {
-                        switch ( this.servcomm.pushRequest(this.brickData).getString(KEY_CMD) ) {
+                        JSONObject pushRequestResponse = this.servcomm.pushRequest(deviceInfoWaitCMD);
+                        String serverCommand = pushRequestResponse.getString(KEY_CMD);
+                        switch ( serverCommand ) {
                             case CMD_REPEAT:
                                 break;
                             case CMD_DOWNLOAD:
                                 log.info("Download user program");
                                 try {
-                                    byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
+                                    byte[] binaryfile = this.servcomm.downloadProgram(deviceInfoWaitCMD);
                                     String filename = this.servcomm.getFilename();
-
-                                    this.nxtcomm.connect();
-                                    this.nxtcomm.uploadAndRunFile(binaryfile, filename);
-                                    this.nxtcomm.disconnect();
-                                    this.state = State.WAIT_EXECUTION;
-                                } catch ( IOException | InterruptedException | NXTCommException e ) {
-                                    log.info("Download and run failed: " + e.getMessage());
+                                    boolean success = uploadProgram(binaryfile, filename);
+                                    if ( success ) {
+                                        this.state = State.WAIT_EXECUTION;
+                                    } else {
+                                        reset(State.ERROR_DOWNLOAD);
+                                    }
+                                } catch ( IOException e ) {
                                     log.info("Do not give up yet - make the next push request");
-                                    this.state = State.WAIT_FOR_CMD;
+                                    reset(State.ERROR_DOWNLOAD);
                                 }
                                 break;
+                            case CMD_DOWNLOAD_RUN:
                             case CMD_CONFIGURATION:
+                            case CMD_UPDATE:
+                                log.info(serverCommand + " - Command not supported!");
                                 break;
-                            case CMD_UPDATE: // log and go to abort
-                                log.info("Firmware updated not necessary and not supported!");
-                            case CMD_ABORT: // go to default
                             default:
                                 throw new RuntimeException("Unexpected response from server");
                         }
                     } catch ( RuntimeException | IOException e ) {
                         log.info("WAIT_FOR_CMD " + e.getMessage());
-                        reset(State.ERROR_HTTP, true);
-                    } finally {
-                        log.info("Push request finished");
-                        this.nxtcomm.disconnect();
+                        reset(State.ERROR_HTTP);
                     }
                     break;
+                case WAIT_EXECUTION:
+                    this.state = State.WAIT_EXECUTION;
+                    notifyConnectionStateChanged(this.state);
+
+                    NXTState robotState = this.nxtcomm.getNXTstate();
+                    if ( robotState == NXTState.WAITING_FOR_PROGRAM ) {
+                        log.info("Program execution finished - enter WAIT_FOR_CMD state again");
+                        this.state = State.WAIT_FOR_CMD;
+                        notifyConnectionStateChanged(this.state);
+                        break;
+                    } else {
+                        log.info("Robot does not wait for a program because " + robotState);
+                    }
+                    sleepUntilNextStep(1000);
+                    break;
+
                 default:
                     break;
             }
+        }
+    }
+
+    private boolean uploadProgram(byte[] binaryfile, String filename) {
+        try {
+            connect();
+            this.nxtcomm.uploadFile(binaryfile, filename);
+            return true;
+        } catch ( Exception e ) {
+            log.info("Download failed: " + e.getMessage());
+            return false;
+        } finally {
+            disconnect();
+        }
+    }
+
+    private void sleepUntilNextStep(int time) {
+        try {
+            Thread.sleep(time);
+        } catch ( InterruptedException e ) {
+            // ok
+        }
+    }
+
+    private void playConnectionSound(boolean isAscending) {
+        try {
+            connect();
+            if ( isAscending ) {
+                this.nxtcomm.playAscending();
+            } else {
+                this.nxtcomm.playDescending();
+            }
+        } catch ( IOException e ) {
+            log.info("playing " + (isAscending ? "ascending" : "descending") + " sound sequence failed");
+        } finally {
+            disconnect();
         }
     }
 
@@ -247,19 +218,11 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
      *
      * @param additionalerrormessage message for popup
      */
-    private void reset(State additionalerrormessage, boolean playDisconnectSound) {
-        if ( playDisconnectSound ) {
-            try {
-                this.nxtcomm.connect();
-                this.nxtcomm.playDescending();
-            } catch ( IOException | NXTCommException e ) {
-                log.info("reset - Play descending failed");
-            }
-        }
+    private void reset(State additionalerrormessage) {
+        playConnectionSound(false);
         if ( (!this.userDisconnect) && (additionalerrormessage != null) ) {
             notifyConnectionStateChanged(additionalerrormessage);
         }
-        this.nxtcomm.disconnect();
         this.userDisconnect = false;
         this.state = State.DISCOVER;
         notifyConnectionStateChanged(this.state);
@@ -267,7 +230,7 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
 
     @Override
     public void connect() {
-        this.state = State.CONNECT;
+        this.state = State.CONNECT_BUTTON_IS_PRESSED;
     }
 
     @Override
@@ -295,12 +258,7 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
 
     @Override
     public String getBrickName() {
-        String brickname = this.brickData.getString("brickname");
-        if ( brickname != null ) {
-            return brickname;
-        } else {
-            return "";
-        }
+        return this.brickName;
     }
 
     @Override
@@ -320,4 +278,20 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
         log.info("Now using default address " + this.serverAddress);
     }
 
+    private static class DiscoverNXT {
+        private NXTInfo nxtInfo;
+
+        public boolean discover() {
+            NXTInfo[] nxts = NXTCommunicator.discover();
+            if ( (nxts.length > 0) ) {
+                this.nxtInfo = nxts[0];
+                return true;
+            }
+            return false;
+        }
+
+        public NXTCommunicator createCommunicator() {
+            return new NXTCommunicator(this.nxtInfo, this.nxtInfo.protocol);
+        }
+    }
 }
