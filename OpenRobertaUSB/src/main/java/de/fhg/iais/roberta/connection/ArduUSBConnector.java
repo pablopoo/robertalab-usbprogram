@@ -251,19 +251,19 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
     }
 
     @Override
-    public void connect() {
+    public void userPressConnectButton() {
         this.state = State.CONNECT_BUTTON_IS_PRESSED;
     }
 
     @Override
-    public void disconnect() {
+    public void userPressDisconnectButton() {
         this.userDisconnect = true;
         this.servcomm.abort(); // will throw exception, reset will be called in catch statement
     }
 
     @Override
     public void close() {
-        disconnect();
+        userPressDisconnectButton();
         this.servcomm.shutdown();
     }
 

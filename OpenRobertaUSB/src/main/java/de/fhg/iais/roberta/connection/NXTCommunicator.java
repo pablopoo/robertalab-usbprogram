@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import org.json.JSONObject;
 
@@ -17,6 +18,8 @@ import lejos.pc.comm.NXTConnector;
 import lejos.pc.comm.NXTInfo;
 
 public class NXTCommunicator {
+
+    private static Logger log = Logger.getLogger("NXTCommunicator");
 
     private static final int MAX_BUFFER_SIZE = 58; // from lejos.nxt.remote.NXTCommand
     private static final byte[] APROGRAMISRUNNING = {
@@ -128,16 +131,36 @@ public class NXTCommunicator {
 
     }
 
-    public void uploadFile(byte[] binaryfile, String nxtFileName) throws IOException {
+    public void uploadFile(byte[] binaryfile, String nxtFileName) throws IOException, NXTCommException {
         if ( nxtFileName.length() > NXTCommand.MAX_FILENAMELENGTH ) {
             nxtFileName = nxtFileName.substring(0, NXTCommand.MAX_FILENAMELENGTH - 1);
         }
         if ( getNXTstate() == NXTState.WAITING_FOR_PROGRAM ) {
-            this.nxtCommand.delete(nxtFileName);
-            sleep(200); // give the nxt time to react
-            writeFileToNXT(binaryfile, nxtFileName);
-            sleep(200);
-            // this.nxtCommand.startProgram(nxtFileName); this will execute the program but we do not want
+            try {
+                connect();
+                this.nxtCommand.delete(nxtFileName);
+                sleep(200); // give the nxt time to react
+                writeFileToNXT(binaryfile, nxtFileName);
+                sleep(200);
+                // this.nxtCommand.startProgram(nxtFileName); this will execute the program but we do not want
+            } finally {
+                disconnect();
+            }
+        }
+    }
+
+    public void playConnectionSound(boolean isAscending) {
+        try {
+            connect();
+            if ( isAscending ) {
+                playAscending();
+            } else {
+                playDescending();
+            }
+        } catch ( IOException | NXTCommException e ) {
+            log.info("playing " + (isAscending ? "ascending" : "descending") + " sound sequence failed");
+        } finally {
+            disconnect();
         }
     }
 

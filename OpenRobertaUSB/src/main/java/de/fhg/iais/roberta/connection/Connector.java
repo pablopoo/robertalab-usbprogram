@@ -10,6 +10,7 @@ public interface Connector {
 
     public enum State {
         DISCOVER,
+        RECONNECT,
         WAIT_FOR_CONNECT_BUTTON_PRESS,
         CONNECT_BUTTON_IS_PRESSED,
         WAIT_FOR_CMD,
@@ -51,12 +52,12 @@ public interface Connector {
     /**
      * Tell the connector to collect necessary data from the robot and initialise a registration to Open Roberta.
      */
-    public void connect();
+    public void userPressConnectButton();
 
     /**
      * Disconnect the current robot properly and search for robots again (start condition of the USB program).
      */
-    public void disconnect();
+    public void userPressDisconnectButton();
 
     /**
      * Shut down the connector for closing the USB program.

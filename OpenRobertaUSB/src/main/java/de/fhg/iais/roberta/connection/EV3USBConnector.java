@@ -303,12 +303,12 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
     }
 
     @Override
-    public void connect() {
+    public void userPressConnectButton() {
         this.state = State.CONNECT_BUTTON_IS_PRESSED;
     }
 
     @Override
-    public void disconnect() {
+    public void userPressDisconnectButton() {
         log.info("DISCONNECTING by user");
         this.userDisconnect = true;
         try {
@@ -344,7 +344,7 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
 
     @Override
     public void close() {
-        disconnect();
+        userPressDisconnectButton();
         this.servcomm.shutdown();
         this.ev3comm.shutdown();
     }

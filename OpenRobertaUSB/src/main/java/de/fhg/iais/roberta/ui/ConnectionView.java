@@ -300,6 +300,10 @@ public class ConnectionView extends JFrame {
         }
     }
 
+    public void setConnectButtonText(String text) {
+        this.butConnect.setText(text);
+    }
+
     public String getCustomIP() {
         return this.customip.getText();
     }

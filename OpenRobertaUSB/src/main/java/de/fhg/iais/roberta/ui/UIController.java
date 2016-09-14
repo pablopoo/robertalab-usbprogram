@@ -61,13 +61,13 @@ public class UIController<ObservableObject> implements Observer {
                     log.info("User connect");
                     if ( UIController.this.connector != null ) {
                         checkForValidCustomServerAddressAndUpdate();
-                        UIController.this.connector.connect();
+                        UIController.this.connector.userPressConnectButton();
                     }
                     b.setText(UIController.this.rb.getString("disconnect"));
                 } else {
                     log.info("User disconnect");
                     if ( UIController.this.connector != null ) {
-                        UIController.this.connector.disconnect();
+                        UIController.this.connector.userPressDisconnectButton();
                     }
                     b.setText(UIController.this.rb.getString("connect"));
                 }
@@ -154,6 +154,8 @@ public class UIController<ObservableObject> implements Observer {
             case WAIT_FOR_SERVER:
                 this.conView.setNew(this.rb.getString("token") + " " + this.connector.getToken());
                 break;
+            case RECONNECT:
+                this.conView.setConnectButtonText(UIController.this.rb.getString("disconnect"));
             case WAIT_FOR_CMD:
                 this.connected = true;
                 this.conView.setNew(this.rb.getString("name") + " " + this.connector.getBrickName());
