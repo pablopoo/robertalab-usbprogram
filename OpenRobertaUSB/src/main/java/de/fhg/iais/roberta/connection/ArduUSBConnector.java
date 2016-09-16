@@ -52,28 +52,14 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
         while ( true ) {
             switch ( this.state ) {
                 case DISCOVER:
-
                     this.portNames = SerialPortList.getPortNames(); //search arduino in port names instead
 
                     if ( (this.portNames.length > 0) ) {
-                        try {
-                            // TODO let user choose which one to connect?
-                            this.arducomm = new ArduCommunicator(this.portNames[this.portNames.length - 1]);
-                            this.arducomm.connect();
-                            this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
-                            notifyConnectionStateChanged(this.state);
-                            break;
-
-                        } catch ( SerialPortException e ) {
-                            //                            e.printStackTrace();
-                        } finally {
-                            this.arducomm.disconnect();
-                            try {
-                                Thread.sleep(1000);
-                            } catch ( InterruptedException e ) {
-                                // ok
-                            }
-                        }
+                        // TODO let user choose which one to connect?
+                        this.arducomm = new ArduCommunicator(this.portNames[this.portNames.length - 1]);
+                        this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
+                        notifyConnectionStateChanged(this.state);
+                        break;
                     } else {
                         log.info("No Arduino device connected");
                         try {
@@ -86,41 +72,23 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                 case WAIT_EXECUTION:
                     this.state = State.WAIT_EXECUTION;
                     notifyConnectionStateChanged(this.state);
+
+                    this.state = State.WAIT_FOR_CMD;
+                    notifyConnectionStateChanged(this.state);
+
                     try {
-                        this.arducomm.connect();
-                        if ( this.arducomm.isConnected() ) {
-                            log.info("Program execution finished - enter WAIT_FOR_CMD state again");
-                            this.state = State.WAIT_FOR_CMD;
-                            notifyConnectionStateChanged(this.state);
-                            break;
-                        } else {
-                            log.info("Program is running - Cable is plugged in (WAIT_EXECUTION)");
-                        }
-                    } catch ( SerialPortException e ) {
-                        log.info("Program is running - cable is not plugged in (WAIT_EXECUTION)");
-                    } finally {
-                        this.arducomm.disconnect();
-                        try {
-                            Thread.sleep(1000);
-                        } catch ( InterruptedException ee ) {
-                            // ok
-                        }
+                        Thread.sleep(1000);
+                    } catch ( InterruptedException ee ) {
+                        // ok
                     }
+
                     break;
                 case WAIT_FOR_CONNECT_BUTTON_PRESS:
                     //                    // GUI initiates changing state to CONNECT
                     try {
-                        this.arducomm.connect();
-                    } catch ( SerialPortException e ) {
-                        log.info("WAIT_FOR_CONNECT " + e.getMessage());
-                        reset(null, false);
-                    } finally {
-                        this.arducomm.disconnect();
-                        try {
-                            Thread.sleep(1000);
-                        } catch ( InterruptedException e ) {
-                            // ok
-                        }
+                        Thread.sleep(1000);
+                    } catch ( InterruptedException e ) {
+                        // ok
                     }
                     break;
                 case CONNECT_BUTTON_IS_PRESSED:
@@ -128,11 +96,10 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                     this.state = State.WAIT_FOR_SERVER;
                     notifyConnectionStateChanged(this.state);
                     try {
-                        this.arducomm.connect();
                         this.brickData = this.arducomm.getDeviceInfo();
                         this.brickData.put(KEY_TOKEN, this.token);
                         this.brickData.put(KEY_CMD, CMD_REGISTER);
-                    } catch ( IOException | SerialPortException e ) {
+                    } catch ( IOException e ) {
                         log.info("CONNECT " + e.getMessage());
                         break;
                     }
@@ -156,21 +123,16 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                     } catch ( IOException | RuntimeException e ) {
                         log.info("CONNECT " + e.getMessage());
                         reset(State.ERROR_HTTP, false);
-                    } finally {
-                        this.arducomm.disconnect();
                     }
                     break;
                 case WAIT_FOR_CMD:
                     try {
-                        this.arducomm.connect();
                         this.brickData = this.arducomm.getDeviceInfo();
                         this.brickData.put(KEY_TOKEN, this.token);
                         this.brickData.put(KEY_CMD, CMD_PUSH);
-                        this.arducomm.disconnect();
-                    } catch ( IOException | SerialPortException e ) {
+                    } catch ( IOException e ) {
                         log.info("WAIT_FOR_CMD " + e.getMessage());
                         this.state = State.WAIT_EXECUTION;
-                        //                        reset(State.ERROR_BRICK, true);
                         break;
                     }
                     try {
@@ -216,9 +178,6 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                     } catch ( RuntimeException | IOException e ) {
                         log.info("WAIT_FOR_CMD " + e.getMessage());
                         reset(State.ERROR_HTTP, true);
-                    } finally {
-                        log.info("Push request finished");
-                        this.arducomm.disconnect();
                     }
                     break;
                 default:
