@@ -1,26 +1,31 @@
 package de.fhg.iais.roberta.connection;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Observable;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONObject;
 
 import de.fhg.iais.roberta.util.ORAtokenGenerator;
 import jssc.SerialPortException;
-import jssc.SerialPortList;
 
 public class ArduUSBConnector extends Observable implements Runnable, Connector {
 
     private String serverIp = "localhost";
     private String serverPort = "1999";
     private final String serverAddress;
-    // private SerialPort serialPort;
-    private String[] portNames;
+
+    private static final String CRLF = "\r\n";
+    private String portName;
 
     private static Logger log = Logger.getLogger("Connector");
 
@@ -40,6 +45,87 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
         this.serverAddress = this.serverIp + ":" + this.serverPort;
     }
 
+    public void getPortName() throws Exception {
+        String ArduQueryResult = getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
+        Matcher m = Pattern.compile("\\(([^)]+)\\)").matcher(ArduQueryResult);
+        while ( m.find() ) {
+
+            //System.out.println(m.group(1));
+            this.portName = m.group(1);
+        }
+
+    }
+
+    //** jWMI from www.henryranch.net **//
+
+    public static String getVBScript(String wmiQueryStr, String wmiCommaSeparatedFieldName) {
+        String vbs = "Dim oWMI : Set oWMI = GetObject(\"winmgmts:\")" + CRLF;
+        vbs += "Dim classComponent : Set classComponent = oWMI.ExecQuery(\"" + wmiQueryStr + "\")" + CRLF;
+        vbs += "Dim obj, strData" + CRLF;
+        vbs += "For Each obj in classComponent" + CRLF;
+        String[] wmiFieldNameArray = wmiCommaSeparatedFieldName.split(",");
+        for ( int i = 0; i < wmiFieldNameArray.length; i++ ) {
+            vbs += "  strData = strData & obj." + wmiFieldNameArray[i] + " & VBCrLf" + CRLF;
+        }
+        vbs += "Next" + CRLF;
+        vbs += "wscript.echo strData" + CRLF;
+        return vbs;
+
+    }
+
+    private static String getEnvVar(String envVarName) throws Exception {
+        String varName = "%" + envVarName + "%";
+        String envVarValue = execute(new String[] {
+            "cmd.exe",
+            "/C",
+            "echo " + varName
+        });
+        if ( envVarValue.equals(varName) ) {
+            throw new Exception("Environment variable '" + envVarName + "' does not exist!");
+        }
+        return envVarValue;
+    }
+
+    private static void writeStrToFile(String filename, String data) throws Exception {
+        FileWriter output = new FileWriter(filename);
+        output.write(data);
+        output.flush();
+        output.close();
+        output = null;
+    }
+
+    public static String getWMIValue(String wmiQueryStr, String wmiCommaSeparatedFieldName) throws Exception {
+        String vbScript = getVBScript(wmiQueryStr, wmiCommaSeparatedFieldName);
+        String tmpDirName = getEnvVar("TEMP").trim();
+        String tmpFileName = tmpDirName + File.separator + "jwmi.vbs";
+        writeStrToFile(tmpFileName, vbScript);
+        String output = execute(new String[] {
+            "cmd.exe",
+            "/C",
+            "cscript.exe",
+            tmpFileName
+        });
+        new File(tmpFileName).delete();
+
+        return output.trim();
+    }
+
+    private static String execute(String[] cmdArray) throws Exception {
+        Process process = Runtime.getRuntime().exec(cmdArray);
+        BufferedReader input = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        String output = "";
+        String line = "";
+        while ( (line = input.readLine()) != null ) {
+            //need to filter out lines that don't contain our desired output
+            if ( !line.contains("Microsoft") && !line.equals("") ) {
+                output += line + CRLF;
+            }
+        }
+        process.destroy();
+        process = null;
+        return output.trim();
+    }
+
     private void setupServerCommunicator() {
         this.servcomm = new ServerCommunicator(this.serverAddress);
     }
@@ -52,11 +138,16 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
         while ( true ) {
             switch ( this.state ) {
                 case DISCOVER:
-                    this.portNames = SerialPortList.getPortNames(); //search arduino in port names instead
+                    try {
+                        getPortName();
+                    } catch ( Exception e1 ) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
 
-                    if ( (this.portNames.length > 0) ) {
+                    if ( (this.portName.length() > 0) ) {
                         // TODO let user choose which one to connect?
-                        this.arducomm = new ArduCommunicator(this.portNames[this.portNames.length - 1]);
+                        this.arducomm = new ArduCommunicator(this.portName);
                         this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                         notifyConnectionStateChanged(this.state);
                         break;
@@ -159,7 +250,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                                         os.close();
                                     }
 
-                                    this.arducomm.uploadFile(this.portNames[this.portNames.length - 1], temp.getAbsolutePath());
+                                    this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
                                     this.state = State.WAIT_EXECUTION;
                                 } catch ( IOException | InterruptedException e ) {
                                     log.info("Download and run failed: " + e.getMessage());
@@ -267,8 +358,21 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     @Override
     public boolean findRobot() {
-        this.portNames = SerialPortList.getPortNames(); //search arduino in port names instead
-        if ( (this.portNames.length > 0) ) {
+
+        boolean arduinoConnected = false;
+        try {
+            getPortName();
+            if ( getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Silicon Labs") ) {
+                // System.out.println("Arduino found");
+                //System.out.println(this.portName);
+                arduinoConnected = true;
+            }
+        } catch ( Exception e ) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        if ( arduinoConnected ) {
             return true;
         }
         return false;

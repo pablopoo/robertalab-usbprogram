@@ -1,27 +1,31 @@
 package de.fhg.iais.roberta.connection;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
+import java.util.Properties;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
 
+import de.fhg.iais.roberta.util.Utils;
 import jssc.SerialPort;
 import jssc.SerialPortException;
 
 public class ArduCommunicator {
-
+    private final Properties commProperties;
     private final String portName;
     SerialPort serialPort;
     String connOptions;
+    String line;
+    String osKey = "";
     String avrPath; //path for avrdude bin
     String avrConfPath; //path for the .conf file
     //Boolean uploadInProgress;
 
     public ArduCommunicator(String portName) {
         this.portName = portName;
-        this.connOptions = "";
+        this.commProperties = Utils.loadProperties("classpath:OpenRobertaUSB.properties");
+        // this.connOptions = "";
     }
 
     public void connect() throws SerialPortException {
@@ -44,19 +48,28 @@ public class ArduCommunicator {
 
     public void setParameters() {
 
-        String userdir = System.getProperty("user.dir") + File.separator;
+        // String userdir = System.getProperty("user.dir") + File.separator;
 
         if ( SystemUtils.IS_OS_WINDOWS ) {
-            this.avrConfPath = new String("./resources/windows/arduino/avrdude.conf");
+            this.osKey = "WinPath";
+            this.avrPath = this.commProperties.getProperty(this.osKey);
+
+            //this.avrConfPath = new String("./resources/windows/arduino/avrdude.conf");
             // avrConfPath = new String(userdir + "hardware/tools/avr/etc/avrdude.conf");
             // avrPath= new String(userdir + "hardware/tools/avr/bin/");
-            this.avrPath = new String("./resources/windows/arduino/avrdude.exe");
+            //this.avrPath = new String("./resources/windows/arduino/avrdude.exe");
         } else if ( SystemUtils.IS_OS_LINUX ) {
-            this.avrConfPath = new String("hardware/tools/avrdude.conf");
-            this.avrPath = new String("hardware/tools/");
+            this.osKey = "LinPath";
+            this.avrPath = this.commProperties.getProperty(this.osKey);
+
+            // this.avrConfPath = new String("hardware/tools/avrdude.conf");
+            //this.avrPath = new String("hardware/tools/");
         } else {
-            this.avrConfPath = new String("hardware/tools/avr/etc/avrdude.conf");
-            this.avrPath = new String("hardware/tools/avr/bin/");
+            this.osKey = "OsXPath";
+            this.avrPath = this.commProperties.getProperty(this.osKey);
+
+            //this.avrConfPath = new String("hardware/tools/avr/etc/avrdude.conf");
+            //this.avrPath = new String("hardware/tools/avr/bin/");
         }
         this.connOptions = " -V -F -p m328p -c arduino -b 115200 ";
 
