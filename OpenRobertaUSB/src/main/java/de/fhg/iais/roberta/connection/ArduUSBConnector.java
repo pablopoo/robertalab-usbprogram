@@ -359,23 +359,12 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
     @Override
     public boolean findRobot() {
 
-        boolean arduinoConnected = false;
         try {
             getPortName();
-            if ( getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Silicon Labs") ) {
-                // System.out.println("Arduino found");
-                //System.out.println(this.portName);
-                arduinoConnected = true;
-            }
+            return getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Silicon Labs");
         } catch ( Exception e ) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            return false;
         }
-
-        if ( arduinoConnected ) {
-            return true;
-        }
-        return false;
     }
 
     @Override
