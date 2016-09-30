@@ -91,18 +91,22 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
         setupServerCommunicator();
         log.config("Server address " + this.serverAddress);
         while ( true ) {
+            String brick_state = null;
+            try {
+                brick_state = this.ev3comm.checkBrickState();
+            } catch ( IOException e1 ) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
             switch ( this.state ) {
                 case DISCOVER:
                     try {
-                        switch ( this.ev3comm.checkBrickState() ) {
-                            case "true": // program is running
-                                break;
-                            case "false": // brick available and no program running
-                                this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
-                                break;
+                        if ( brick_state.equals("true") ) {
+                        } else if ( brick_state.equals("false") ) { // brick available and no program running
+                            this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                         }
                         Thread.sleep(1000);
-                    } catch ( IOException | InterruptedException e ) {
+                    } catch ( InterruptedException e ) {
                         log.info(State.DISCOVER + " " + e.getMessage());
                     }
                     notifyConnectionStateChanged(this.state);
@@ -111,39 +115,33 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                     this.state = State.WAIT_EXECUTION;
                     notifyConnectionStateChanged(this.state);
                     try {
-                        switch ( this.ev3comm.checkBrickState() ) {
-                            case "true": // program is running
-                                this.state = State.WAIT_EXECUTION;
-                                //notifyConnectionStateChanged(this.state);
-                                break;
-                            case "false": // brick available and no program running
-                                log.info(State.WAIT_EXECUTION + "EV3 plugged in again, no program running, OK");
-                                this.state = State.WAIT_FOR_CMD;
-                                notifyConnectionStateChanged(this.state);
-                                break;
+                        if ( brick_state.equals("true") ) {
+                            // program is running
+                            this.state = State.WAIT_EXECUTION;
+                            //notifyConnectionStateChanged(this.state);
+                        } else if ( brick_state.equals("false") ) {
+                            // brick available and no program running
+                            log.info(State.WAIT_EXECUTION + "EV3 plugged in again, no program running, OK");
+                            this.state = State.WAIT_FOR_CMD;
+                            notifyConnectionStateChanged(this.state);
                         }
                         Thread.sleep(1000);
-                    } catch ( IOException | InterruptedException e ) {
+                    } catch ( InterruptedException e ) {
                         log.info(State.WAIT_EXECUTION + " " + e.getMessage());
                     }
                     break;
                 case WAIT_FOR_CONNECT_BUTTON_PRESS:
                     try {
-                        switch ( this.ev3comm.checkBrickState() ) {
-                            case "true":
-                                this.state = State.DISCOVER;
-                                notifyConnectionStateChanged(State.DISCOVER);
-                                break;
-                            case "false":
-                                // wait for user
-                                break;
-                            default:
-                                break;
+                        if ( brick_state.equals("true") ) {
+
+                            this.state = State.DISCOVER;
+                            notifyConnectionStateChanged(State.DISCOVER);
+                        } else if ( brick_state.equals("false") ) {
+
+                            // wait for user
+
                         }
                         Thread.sleep(1000);
-                    } catch ( IOException brickerror ) {
-                        log.info(State.WAIT_FOR_CONNECT_BUTTON_PRESS + " " + brickerror.getMessage());
-                        reset(null);
                     } catch ( InterruptedException e ) {
                         // ok
                     }
@@ -168,25 +166,24 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                         }
                         JSONObject serverResponse = this.servcomm.pushRequest(this.brickData);
                         String command = serverResponse.getString("cmd");
-                        switch ( command ) {
-                            case CMD_REPEAT:
-                                try {
-                                    this.brickData = this.ev3comm.pushToBrick(CMD_REPEAT);
-                                } catch ( IOException brickerror ) {
-                                    log.info(State.CONNECT_BUTTON_IS_PRESSED + " " + brickerror.getMessage());
-                                    reset(State.ERROR_BRICK);
-                                    break;
-                                }
-                                this.state = State.WAIT_FOR_CMD;
-                                notifyConnectionStateChanged(State.WAIT_FOR_CMD);
+                        if ( command.equals(CMD_REPEAT) ) {
+
+                            try {
+                                this.brickData = this.ev3comm.pushToBrick(CMD_REPEAT);
+                            } catch ( IOException brickerror ) {
+                                log.info(State.CONNECT_BUTTON_IS_PRESSED + " " + brickerror.getMessage());
+                                reset(State.ERROR_BRICK);
                                 break;
-                            case CMD_ABORT:
-                                reset(State.TOKEN_TIMEOUT);
-                                break;
-                            default:
-                                log.info(State.CONNECT_BUTTON_IS_PRESSED + " Command " + command + " unknown");
-                                reset(null);
-                                break;
+                            }
+                            this.state = State.WAIT_FOR_CMD;
+                            notifyConnectionStateChanged(State.WAIT_FOR_CMD);
+                        } else if ( command.equals(CMD_ABORT) ) {
+                            reset(State.TOKEN_TIMEOUT);
+                        } else {
+
+                            log.info(State.CONNECT_BUTTON_IS_PRESSED + " Command " + command + " unknown");
+                            reset(null);
+
                         }
                     } catch ( IOException servererror ) {
                         log.info(State.CONNECT_BUTTON_IS_PRESSED + " " + servererror.getMessage());
@@ -206,64 +203,66 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                     String responseCommandFromServer = "default";
                     try {
                         responseCommandFromServer = this.servcomm.pushRequest(this.brickData).getString(KEY_CMD);
-                    } catch ( IOException | JSONException servererror ) {
+                    } catch ( IOException servererror ) {
+                        // continue to default block
+                        log.info(State.WAIT_FOR_CMD + " Server response not ok " + servererror.getMessage());
+                        reset(State.ERROR_HTTP);
+                        break;
+                    } catch ( JSONException servererror ) {
                         // continue to default block
                         log.info(State.WAIT_FOR_CMD + " Server response not ok " + servererror.getMessage());
                         reset(State.ERROR_HTTP);
                         break;
                     }
-                    switch ( responseCommandFromServer ) {
-                        case CMD_REPEAT:
-                            break;
-                        case CMD_ABORT:
-                            try {
-                                this.ev3comm.disconnectBrick();
-                            } catch ( IOException brickerror ) {
-                                log.info(State.WAIT_FOR_CMD + " Got" + CMD_ABORT + "and Brick disconnect failed " + brickerror.getMessage());
+                    if ( responseCommandFromServer.equals(CMD_REPEAT) ) {
+                    } else if ( responseCommandFromServer.equals(CMD_ABORT) ) {
+
+                        try {
+                            this.ev3comm.disconnectBrick();
+                        } catch ( IOException brickerror ) {
+                            log.info(State.WAIT_FOR_CMD + " Got" + CMD_ABORT + "and Brick disconnect failed " + brickerror.getMessage());
+                        }
+                        reset(null);
+                    } else if ( responseCommandFromServer.equals(CMD_UPDATE) ) {
+                        log.info("Execute firmware update");
+
+                        try {
+                            for ( int i = 0; i < this.fwfiles.length; i++ ) {
+                                byte[] binaryfile = this.servcomm.downloadFirmwareFile(this.fwfiles[i]);
+                                this.ev3comm.uploadFirmwareFile(binaryfile, this.servcomm.getFilename());
                             }
+                            this.ev3comm.restartBrick();
+                            log.info("Firmware update successful. Restarting EV3 now!");
                             reset(null);
-                            break;
-                        case CMD_UPDATE:
-                            log.info("Execute firmware update");
                             try {
-                                for ( int i = 0; i < this.fwfiles.length; i++ ) {
-                                    byte[] binaryfile = this.servcomm.downloadFirmwareFile(this.fwfiles[i]);
-                                    this.ev3comm.uploadFirmwareFile(binaryfile, this.servcomm.getFilename());
-                                }
-                                this.ev3comm.restartBrick();
-                                log.info("Firmware update successful. Restarting EV3 now!");
-                                reset(null);
-                                try {
-                                    Thread.sleep(3000);
-                                } catch ( InterruptedException e ) {
-                                    // ok;
-                                }
-                            } catch ( IOException e ) {
-                                log.info(State.WAIT_FOR_CMD + " Brick update failed " + e.getMessage());
-                                reset(State.ERROR_UPDATE);
+                                Thread.sleep(3000);
+                            } catch ( InterruptedException e ) {
+                                // ok;
                             }
-                            break;
-                        case CMD_DOWNLOAD:
-                            log.info("Download user program");
-                            try {
-                                byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
-                                String filename = this.servcomm.getFilename();
-                                this.ev3comm.uploadProgram(binaryfile, filename);
-                                this.state = State.WAIT_EXECUTION;
-                            } catch ( IOException e ) {
-                                // do not give up the brick, try another push request
-                                // user has to click on run button again
-                                log.info(State.WAIT_FOR_CMD + " Downlaod file failed " + e.getMessage());
-                                this.state = State.WAIT_FOR_CMD;
-                            }
-                            break;
-                        case CMD_CONFIGURATION:
-                            log.warning("Command " + responseCommandFromServer + " unused, ignore and continue push!");
-                            break;
-                        default:
-                            log.warning("Command " + responseCommandFromServer + " unknown");
-                            reset(null);
-                            break;
+                        } catch ( IOException e ) {
+                            log.info(State.WAIT_FOR_CMD + " Brick update failed " + e.getMessage());
+                            reset(State.ERROR_UPDATE);
+                        }
+                    } else if ( responseCommandFromServer.equals(CMD_DOWNLOAD) ) {
+                        log.info("Download user program");
+                        try {
+                            byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
+                            String filename = this.servcomm.getFilename();
+                            this.ev3comm.uploadProgram(binaryfile, filename);
+                            this.state = State.WAIT_EXECUTION;
+                        } catch ( IOException e ) {
+                            // do not give up the brick, try another push request
+                            // user has to click on run button again
+                            log.info(State.WAIT_FOR_CMD + " Downlaod file failed " + e.getMessage());
+                            this.state = State.WAIT_FOR_CMD;
+                        }
+                    } else if ( responseCommandFromServer.equals(CMD_CONFIGURATION) ) {
+                        log.warning("Command " + responseCommandFromServer + " unused, ignore and continue push!");
+                    } else {
+
+                        log.warning("Command " + responseCommandFromServer + " unknown");
+                        reset(null);
+
                     }
                 default:
                     break;

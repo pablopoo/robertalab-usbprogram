@@ -3,7 +3,6 @@ package de.fhg.iais.roberta.usb;
 import java.awt.Color;
 import java.awt.Font;
 import java.io.File;
-import java.io.IOException;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.ConsoleHandler;
@@ -156,7 +155,7 @@ public class Main {
             fileHandler = new FileHandler(new File(logFile, LOGFILENAME).getPath(), false);
             fileHandler.setFormatter(new ORAFormatter());
             fileHandler.setLevel(Level.ALL);
-        } catch ( SecurityException | IOException e ) {
+        } catch ( Exception e ) {
             // ok
         }
         consoleHandler.setFormatter(new ORAFormatter());

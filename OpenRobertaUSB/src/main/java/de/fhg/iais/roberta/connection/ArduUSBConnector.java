@@ -197,24 +197,26 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                     try {
                         JSONObject serverResponse = this.servcomm.pushRequest(this.brickData);
                         String command = serverResponse.getString("cmd");
-                        switch ( command ) {
-                            case CMD_REPEAT:
-                                this.state = State.WAIT_FOR_CMD;
-                                notifyConnectionStateChanged(this.state);
-                                break;
-                            case CMD_ABORT:
-                                log.info("registration timeout");
-                                notifyConnectionStateChanged(State.TOKEN_TIMEOUT);
-                                this.state = State.DISCOVER;
-                                notifyConnectionStateChanged(this.state);
-                                break;
-                            default:
-                                throw new RuntimeException("Unexpected command " + command + "from server");
+                        if ( command.equals(CMD_REPEAT) ) {
+
+                            this.state = State.WAIT_FOR_CMD;
+                            notifyConnectionStateChanged(this.state);
+                        } else if ( command.equals(CMD_ABORT) ) {
+                            log.info("registration timeout");
+                            notifyConnectionStateChanged(State.TOKEN_TIMEOUT);
+                            this.state = State.DISCOVER;
+                            notifyConnectionStateChanged(this.state);
+                        } else {
+                            throw new RuntimeException("Unexpected command " + command + "from server");
                         }
-                    } catch ( IOException | RuntimeException e ) {
+                    } catch ( IOException e ) {
+                        log.info("CONNECT " + e.getMessage());
+                        reset(State.ERROR_HTTP, false);
+                    } catch ( RuntimeException e ) {
                         log.info("CONNECT " + e.getMessage());
                         reset(State.ERROR_HTTP, false);
                     }
+
                     break;
                 case WAIT_FOR_CMD:
                     try {
@@ -227,46 +229,49 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         break;
                     }
                     try {
-                        switch ( this.servcomm.pushRequest(this.brickData).getString(KEY_CMD) ) {
-                            case CMD_REPEAT:
-                                break;
-                            case CMD_DOWNLOAD:
-                                log.info("Download user program");
-                                try {
-                                    byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
-                                    String filename = this.servcomm.getFilename();
-                                    File temp = File.createTempFile(filename, "");
+                        String cmd = this.servcomm.pushRequest(this.brickData).getString(KEY_CMD);
+                        if ( cmd.equals(CMD_REPEAT) ) {
 
-                                    temp.deleteOnExit();
+                        } else if ( cmd.equals(CMD_DOWNLOAD) ) {
+                            log.info("Download user program");
+                            try {
+                                byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
+                                String filename = this.servcomm.getFilename();
+                                File temp = File.createTempFile(filename, "");
 
-                                    if ( !temp.exists() ) {
-                                        throw new FileNotFoundException("File " + temp.getAbsolutePath() + " does not exist.");
-                                    }
+                                temp.deleteOnExit();
 
-                                    FileOutputStream os = new FileOutputStream(temp);
-                                    try {
-                                        os.write(binaryfile);
-                                    } finally {
-                                        os.close();
-                                    }
-
-                                    this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
-                                    this.state = State.WAIT_EXECUTION;
-                                } catch ( IOException | InterruptedException e ) {
-                                    log.info("Download and run failed: " + e.getMessage());
-                                    log.info("Do not give up yet - make the next push request");
-                                    this.state = State.WAIT_FOR_CMD;
+                                if ( !temp.exists() ) {
+                                    throw new FileNotFoundException("File " + temp.getAbsolutePath() + " does not exist.");
                                 }
-                                break;
-                            case CMD_CONFIGURATION:
-                                break;
-                            case CMD_UPDATE: // log and go to abort
-                                log.info("Firmware updated not necessary and not supported!");
-                            case CMD_ABORT: // go to default
-                            default:
-                                throw new RuntimeException("Unexpected response from server");
+
+                                FileOutputStream os = new FileOutputStream(temp);
+                                try {
+                                    os.write(binaryfile);
+                                } finally {
+                                    os.close();
+                                }
+
+                                this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
+                                this.state = State.WAIT_EXECUTION;
+                            } catch ( IOException e ) {
+                                log.info("Download and run failed: " + e.getMessage());
+                                log.info("Do not give up yet - make the next push request");
+                                this.state = State.WAIT_FOR_CMD;
+                            } catch ( InterruptedException e ) {
+                                log.info("Download and run failed: " + e.getMessage());
+                                log.info("Do not give up yet - make the next push request");
+                                this.state = State.WAIT_FOR_CMD;
+                            }
+                        } else if ( cmd.equals(CMD_CONFIGURATION) ) {
+                        } else {
+
+                            throw new RuntimeException("Unexpected response from server");
                         }
-                    } catch ( RuntimeException | IOException e ) {
+                    } catch ( RuntimeException e ) {
+                        log.info("WAIT_FOR_CMD " + e.getMessage());
+                        reset(State.ERROR_HTTP, true);
+                    } catch ( IOException e ) {
                         log.info("WAIT_FOR_CMD " + e.getMessage());
                         reset(State.ERROR_HTTP, true);
                     }

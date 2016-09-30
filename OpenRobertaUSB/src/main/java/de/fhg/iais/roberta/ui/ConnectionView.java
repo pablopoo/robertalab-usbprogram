@@ -289,14 +289,14 @@ public class ConnectionView extends JFrame {
             this.pnlCustomHeading.setVisible(true);
             this.pnlCustomAddress.setVisible(true);
             this.centerPanel.revalidate();
-            this.revalidate();
+            //this.revalidate();
         } else {
             this.setSize(new Dimension(WIDTH, HEIGHT));
             this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
             this.pnlCustomHeading.setVisible(false);
             this.pnlCustomAddress.setVisible(false);
             this.centerPanel.revalidate();
-            this.revalidate();
+            //this.revalidate();
         }
     }
 

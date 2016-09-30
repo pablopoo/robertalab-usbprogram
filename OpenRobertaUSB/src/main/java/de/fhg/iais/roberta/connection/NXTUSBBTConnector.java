@@ -94,25 +94,27 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
                         //Blocks until the server returns command in its response
                         JSONObject serverResponse = this.servcomm.pushRequest(deviceInfo);
                         String command = serverResponse.getString("cmd");
-                        switch ( command ) {
-                            case CMD_REPEAT:
-                                log.info("registration successful");
-                                this.brickName = deviceInfo.getString("brickname");
-                                this.macAddr = deviceInfo.getString("macaddr");
-                                this.nxtcomm.playConnectionSound(true);
-                                this.state = State.WAIT_FOR_CMD;
-                                notifyConnectionStateChanged(this.state);
-                                break;
-                            case CMD_ABORT:
-                                log.info("registration timeout");
-                                notifyConnectionStateChanged(State.TOKEN_TIMEOUT);
-                                this.state = State.DISCOVER;
-                                notifyConnectionStateChanged(this.state);
-                                break;
-                            default:
-                                throw new RuntimeException("Unexpected command " + command + "from server");
+                        if ( command.equals(CMD_REPEAT) ) {
+
+                            log.info("registration successful");
+                            this.brickName = deviceInfo.getString("brickname");
+                            this.macAddr = deviceInfo.getString("macaddr");
+                            this.nxtcomm.playConnectionSound(true);
+                            this.state = State.WAIT_FOR_CMD;
+                            notifyConnectionStateChanged(this.state);
+                        } else if ( command.equals(CMD_ABORT) ) {
+                            log.info("registration timeout");
+                            notifyConnectionStateChanged(State.TOKEN_TIMEOUT);
+                            this.state = State.DISCOVER;
+                            notifyConnectionStateChanged(this.state);
+                        } else {
+                            throw new RuntimeException("Unexpected command " + command + "from server");
                         }
-                    } catch ( IOException | RuntimeException e ) {
+                    } catch ( IOException e ) {
+                        log.info("SERVER COMMUNICATION ERROR " + e.getMessage());
+                        reset(State.ERROR_HTTP);
+                        resetLastConnectionData();
+                    } catch ( RuntimeException e ) {
                         log.info("SERVER COMMUNICATION ERROR " + e.getMessage());
                         reset(State.ERROR_HTTP);
                         resetLastConnectionData();
@@ -133,34 +135,30 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
 
                         }
                         String serverCommand = pushRequestResponse.getString(KEY_CMD);
-                        switch ( serverCommand ) {
-                            case CMD_REPEAT:
-                                break;
-                            case CMD_DOWNLOAD:
-                                log.info("Download user program");
-                                try {
-                                    byte[] binaryfile = this.servcomm.downloadProgram(deviceInfoWaitCMD);
-                                    String filename = this.servcomm.getFilename();
-                                    boolean success = uploadProgram(binaryfile, filename);
-                                    if ( success ) {
-                                        this.state = State.WAIT_EXECUTION;
-                                    } else {
-                                        reset(State.ERROR_DOWNLOAD);
-                                    }
-                                } catch ( IOException e ) {
-                                    log.info("Do not give up yet - make the next push request");
+                        if ( serverCommand.equals(CMD_REPEAT) ) {
+                        } else if ( serverCommand.equals(CMD_DOWNLOAD) ) {
+                            log.info("Download user program");
+                            try {
+                                byte[] binaryfile = this.servcomm.downloadProgram(deviceInfoWaitCMD);
+                                String filename = this.servcomm.getFilename();
+                                boolean success = uploadProgram(binaryfile, filename);
+                                if ( success ) {
+                                    this.state = State.WAIT_EXECUTION;
+                                } else {
                                     reset(State.ERROR_DOWNLOAD);
                                 }
-                                break;
-                            case CMD_DOWNLOAD_RUN:
-                            case CMD_CONFIGURATION:
-                            case CMD_UPDATE:
-                                log.info(serverCommand + " - Command not supported!");
-                                break;
-                            default:
-                                throw new RuntimeException("Unexpected response from server");
+                            } catch ( IOException e ) {
+                                log.info("Do not give up yet - make the next push request");
+                                reset(State.ERROR_DOWNLOAD);
+                            }
+                        } else {
+                            throw new RuntimeException("Unexpected response from server");
                         }
-                    } catch ( RuntimeException | IOException e ) {
+                    } catch ( RuntimeException e ) {
+                        log.info("WAIT_FOR_CMD " + e.getMessage());
+                        resetLastConnectionData();
+                        reset(State.ERROR_HTTP);
+                    } catch ( IOException e ) {
                         log.info("WAIT_FOR_CMD " + e.getMessage());
                         resetLastConnectionData();
                         reset(State.ERROR_HTTP);

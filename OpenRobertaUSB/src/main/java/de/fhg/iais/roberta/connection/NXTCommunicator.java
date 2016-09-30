@@ -82,7 +82,9 @@ public class NXTCommunicator {
             deviceInfo.put("brickname", info.NXTname.trim());
             deviceInfo.put("battery", new DecimalFormat("#.#").format(((float) this.nxtCommand.getBatteryLevel()) / 1000));
 
-        } catch ( IOException | NXTCommException e ) {
+        } catch ( IOException e ) {
+            return null;
+        } catch ( NXTCommException e ) {
             return null;
         } finally {
             disconnect();
@@ -123,7 +125,9 @@ public class NXTCommunicator {
             connect();
             boolean isRunning = !Arrays.equals(APROGRAMISRUNNING, this.nxtCommand.getCurrentProgramName().getBytes());
             return isRunning ? NXTState.PROGRAM_RUNNING : NXTState.WAITING_FOR_PROGRAM;
-        } catch ( IOException | NXTCommException e ) {
+        } catch ( IOException e ) {
+            return NXTState.DISCONNECTED;
+        } catch ( NXTCommException e ) {
             return NXTState.DISCONNECTED;
         } finally {
             disconnect();
@@ -157,7 +161,9 @@ public class NXTCommunicator {
             } else {
                 playDescending();
             }
-        } catch ( IOException | NXTCommException e ) {
+        } catch ( IOException e ) {
+            log.info("playing " + (isAscending ? "ascending" : "descending") + " sound sequence failed");
+        } catch ( NXTCommException e ) {
             log.info("playing " + (isAscending ? "ascending" : "descending") + " sound sequence failed");
         } finally {
             disconnect();
@@ -180,12 +186,12 @@ public class NXTCommunicator {
         try {
             this.nxtCommand.close();
             this.nxtCommand.disconnect();
-        } catch ( IOException | NullPointerException e ) {
+        } catch ( Exception e ) {
             // ok
         }
         try {
             this.nxtCommunication.close();
-        } catch ( IOException | NullPointerException e ) {
+        } catch ( Exception e ) {
             // ok
         }
     }
