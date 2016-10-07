@@ -47,13 +47,10 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     public void getPortName() throws Exception {
         String ArduQueryResult = getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
-        Matcher m = Pattern.compile("\\(([^)]+)\\)").matcher(ArduQueryResult);
+        Matcher m = Pattern.compile("(Silicon Labs CP210x USB to UART Bridge \\()(.*)\\)").matcher(ArduQueryResult);
         while ( m.find() ) {
-
-            //System.out.println(m.group(1));
-            this.portName = m.group(1);
+            this.portName = m.group(2);
         }
-
     }
 
     //** jWMI from www.henryranch.net **//

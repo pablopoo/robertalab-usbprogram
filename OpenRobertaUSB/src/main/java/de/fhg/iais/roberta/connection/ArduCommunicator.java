@@ -47,29 +47,18 @@ public class ArduCommunicator {
     }
 
     public void setParameters() {
-
-        // String userdir = System.getProperty("user.dir") + File.separator;
-
         if ( SystemUtils.IS_OS_WINDOWS ) {
             this.osKey = "WinPath";
             this.avrPath = this.commProperties.getProperty(this.osKey);
 
-            //this.avrConfPath = new String("./resources/windows/arduino/avrdude.conf");
-            // avrConfPath = new String(userdir + "hardware/tools/avr/etc/avrdude.conf");
-            // avrPath= new String(userdir + "hardware/tools/avr/bin/");
-            //this.avrPath = new String("./resources/windows/arduino/avrdude.exe");
         } else if ( SystemUtils.IS_OS_LINUX ) {
             this.osKey = "LinPath";
             this.avrPath = this.commProperties.getProperty(this.osKey);
 
-            // this.avrConfPath = new String("hardware/tools/avrdude.conf");
-            //this.avrPath = new String("hardware/tools/");
         } else {
             this.osKey = "OsXPath";
             this.avrPath = this.commProperties.getProperty(this.osKey);
 
-            //this.avrConfPath = new String("hardware/tools/avr/etc/avrdude.conf");
-            //this.avrPath = new String("hardware/tools/avr/bin/");
         }
         this.connOptions = " -V -F -p m328p -c arduino -b 115200 ";
 
@@ -86,17 +75,8 @@ public class ArduCommunicator {
         deviceInfo.put("battery", "90.0");
         deviceInfo.put("menuversion", "1.4.0");
 
-        //deviceInfo.put("firmwareversion", this.nxtCommand.getFirmwareVersion().firmwareVersion);
-        //DeviceInfo info = this.nxtCommand.getDeviceInfo();
-        //deviceInfo.put("macaddr", info.bluetoothAddress);
         deviceInfo.put("brickname", "Ardu");
-        //deviceInfo.put("battery", new DecimalFormat("#.#").format(((float) this.nxtCommand.getBatteryLevel()) / 1000));
-        //deviceInfo.put("menuversion", "1.4.0");
-        //deviceInfo.put("protocolversion", this.nxtCommand.getFirmwareVersion().protocolVersion);
-        //deviceInfo.put("connectionType", (this.protocol==1) ? "USB" : "Bluetooth");
-        //deviceInfo.put("localaddress", this.nxtCommand.getLocalAddress());
-        //deviceInfo.put("freeflash", info.freeFlash);
-        //deviceInfo.put("signalstrength", info.signalStrength);
+
         return deviceInfo;
     }
 
@@ -111,18 +91,6 @@ public class ArduCommunicator {
 
     public void uploadFile(String portName, String filePath) throws IOException, InterruptedException {
         setParameters();
-        String command;
-        command =
-            this.avrPath
-                + " -C "
-                + this.avrConfPath
-                + this.connOptions
-                + "-P"
-                + portName
-                + " -Uflash:w:"
-                + "C:/dev/OpenRoberta/gitWorkspaces/robertalab-usbprogram/OpenRobertaUSB/"
-                + filePath
-                + ":i";
 
         try {
             ProcessBuilder procBuilder = new ProcessBuilder(new String[] {
@@ -133,8 +101,6 @@ public class ArduCommunicator {
                 "-carduino",
                 "-Uflash:w:" + filePath + ":i",
                 "-P" + portName
-
-                //                "-C " + this.avrConfPath
             });
 
 //            procBuilder.redirectInput(Redirect.INHERIT);
