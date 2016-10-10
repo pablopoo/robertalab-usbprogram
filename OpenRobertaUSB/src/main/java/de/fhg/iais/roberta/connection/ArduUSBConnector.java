@@ -262,7 +262,6 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                             }
                         } else if ( cmd.equals(CMD_CONFIGURATION) ) {
                         } else {
-
                             throw new RuntimeException("Unexpected response from server");
                         }
                     } catch ( RuntimeException e ) {

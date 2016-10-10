@@ -1,12 +1,10 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fhg.iais.openroberta</groupId>
 	<artifactId>OpenRobertaUSB</artifactId>
 	<version>1.4.0-SNAPSHOT</version>
 	<properties>
-		<!-- the server and the crosscompiler SHOULD be compatible between(including) 
-			the following two versions of software deployed on the ROBOT -->
+		<!-- the server and the crosscompiler SHOULD be compatible between(including) the following two versions of software deployed on the ROBOT -->
 		<validversionrange.From>1.4.0</validversionrange.From>
 		<validversionrange.To>1.4.0</validversionrange.To>
 
@@ -86,7 +84,7 @@
 			<artifactId>jssc</artifactId>
 			<version>2.8.0</version>
 		</dependency>
-		
+
 	</dependencies>
 	<build>
 		<plugins>
@@ -118,6 +116,7 @@
 						<goals>
 							<goal>copy</goal>
 						</goals>
+						
 						<configuration>
 							<artifactItems>
 								<artifactItem>
@@ -163,11 +162,61 @@
 						</goals>
 						<configuration>
 							<transformers>
-								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>de.fhg.iais.roberta.usb.Main</mainClass>
 								</transformer>
 							</transformers>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>com.akathist.maven.plugins.launch4j</groupId>
+				<artifactId>launch4j-maven-plugin</artifactId>
+				<version>1.7.12</version>
+				<executions>
+					<execution>
+						<id>l4j-clui</id>
+						<phase>package</phase>
+						<goals>
+							<goal>launch4j</goal>
+						</goals>
+						<configuration>
+							<dontWrapJar>false</dontWrapJar>
+							<headerType>gui</headerType>
+							<jar>${basedir}/target/OpenRobertaUSB-${project.version}.jar</jar>
+							<outfile>${basedir}/USBinstaller/Windows/OpenRobertaUSB.exe</outfile>
+							<errTitle></errTitle>
+							<cmdLine></cmdLine>
+							<chdir>.</chdir>
+							<priority>normal</priority>
+							<downloadUrl></downloadUrl>
+							<supportUrl></supportUrl>
+							<stayAlive>false</stayAlive>
+							<restartOnCrash>true</restartOnCrash>
+							<manifest></manifest>
+							<icon>${basedir}/src/main/resources/OR.ico</icon>
+							<singleInstance>
+								<mutexName>OpenRoberta</mutexName>
+								<windowTitle></windowTitle>
+							</singleInstance>
+							<classPath>
+								<mainClass>de.fhg.iais.roberta.usb.Main</mainClass>
+								<jarLocation>lib/*</jarLocation>
+								<jarLocation>resources/*</jarLocation>
+							</classPath>
+							<jre>
+								<path>java/</path>
+								<bundledJre64Bit>false</bundledJre64Bit>
+								<bundledJreAsFallback>false</bundledJreAsFallback>
+								<minVersion>1.7.0_0</minVersion>
+								<maxVersion></maxVersion>
+								<jdkPreference>jreOnly</jdkPreference>
+								<runtimeBits>64/32</runtimeBits>
+								<opts>
+									<opt>-Dfile.encoding=UTF-8</opt>
+								</opts>
+							</jre>
 						</configuration>
 					</execution>
 				</executions>

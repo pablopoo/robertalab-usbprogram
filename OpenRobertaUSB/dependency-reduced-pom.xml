@@ -83,6 +83,57 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>com.akathist.maven.plugins.launch4j</groupId>
+        <artifactId>launch4j-maven-plugin</artifactId>
+        <version>1.7.12</version>
+        <executions>
+          <execution>
+            <id>l4j-clui</id>
+            <phase>package</phase>
+            <goals>
+              <goal>launch4j</goal>
+            </goals>
+            <configuration>
+              <dontWrapJar>false</dontWrapJar>
+              <headerType>gui</headerType>
+              <jar>${basedir}/target/OpenRobertaUSB-${project.version}.jar</jar>
+              <outfile>${basedir}/USBinstaller/Windows/OpenRobertaUSB.exe</outfile>
+              <errTitle />
+              <cmdLine />
+              <chdir>.</chdir>
+              <priority>normal</priority>
+              <downloadUrl />
+              <supportUrl />
+              <stayAlive>false</stayAlive>
+              <restartOnCrash>true</restartOnCrash>
+              <manifest />
+              <icon>${basedir}/src/main/resources/OR.ico</icon>
+              <singleInstance>
+                <mutexName>OpenRoberta</mutexName>
+                <windowTitle />
+              </singleInstance>
+              <classPath>
+                <mainClass>de.fhg.iais.roberta.usb.Main</mainClass>
+                <jarLocation>lib/*</jarLocation>
+                <jarLocation>resources/*</jarLocation>
+              </classPath>
+              <jre>
+                <path>java/</path>
+                <bundledJre64Bit>false</bundledJre64Bit>
+                <bundledJreAsFallback>false</bundledJreAsFallback>
+                <minVersion>1.7.0_0</minVersion>
+                <maxVersion />
+                <jdkPreference>jreOnly</jdkPreference>
+                <runtimeBits>64/32</runtimeBits>
+                <opts>
+                  <opt>-Dfile.encoding=UTF-8</opt>
+                </opts>
+              </jre>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
   <repositories>
