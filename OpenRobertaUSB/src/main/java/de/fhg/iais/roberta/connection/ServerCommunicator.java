@@ -11,6 +11,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
@@ -64,7 +65,7 @@ public class ServerCommunicator {
      * @return response from the server
      * @throws IOException if the server is unreachable for whatever reason.
      */
-    public JSONObject pushRequest(JSONObject requestContent) throws IOException {
+    public JSONObject pushRequest(JSONObject requestContent) throws IOException, JSONException {
         this.post = new HttpPost("http://" + this.serverpushAddress);
         StringEntity requestEntity = new StringEntity(requestContent.toString(), ContentType.create("application/json", "UTF-8"));
         System.out.println(requestContent.toString());

@@ -91,23 +91,18 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
         setupServerCommunicator();
         log.config("Server address " + this.serverAddress);
         while ( true ) {
-            String brick_state = null;
-            try {
-                brick_state = this.ev3comm.checkBrickState();
-            } catch ( IOException e1 ) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
             switch ( this.state ) {
                 case DISCOVER:
                     try {
-                        if ( brick_state.equals("true") ) {
-                        } else if ( brick_state.equals("false") ) { // brick available and no program running
+                        if ( this.ev3comm.checkBrickState().equals("true") ) {
+                        } else if ( this.ev3comm.checkBrickState().equals("false") ) { // brick available and no program running
                             this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                         }
                         Thread.sleep(1000);
                     } catch ( InterruptedException e ) {
                         log.info(State.DISCOVER + " " + e.getMessage());
+                    } catch ( IOException e ) {
+                        // ok
                     }
                     notifyConnectionStateChanged(this.state);
                     break;
@@ -115,11 +110,11 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                     this.state = State.WAIT_EXECUTION;
                     notifyConnectionStateChanged(this.state);
                     try {
-                        if ( brick_state.equals("true") ) {
+                        if ( this.ev3comm.checkBrickState().equals("true") ) {
                             // program is running
                             this.state = State.WAIT_EXECUTION;
                             //notifyConnectionStateChanged(this.state);
-                        } else if ( brick_state.equals("false") ) {
+                        } else if ( this.ev3comm.checkBrickState().equals("false") ) {
                             // brick available and no program running
                             log.info(State.WAIT_EXECUTION + "EV3 plugged in again, no program running, OK");
                             this.state = State.WAIT_FOR_CMD;
@@ -128,21 +123,22 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                         Thread.sleep(1000);
                     } catch ( InterruptedException e ) {
                         log.info(State.WAIT_EXECUTION + " " + e.getMessage());
+                    } catch ( IOException e ) {
+                        // ok
                     }
                     break;
                 case WAIT_FOR_CONNECT_BUTTON_PRESS:
                     try {
-                        if ( brick_state.equals("true") ) {
-
+                        if ( this.ev3comm.checkBrickState().equals("true") ) {
                             this.state = State.DISCOVER;
                             notifyConnectionStateChanged(State.DISCOVER);
-                        } else if ( brick_state.equals("false") ) {
-
+                        } else if ( this.ev3comm.checkBrickState().equals("false") ) {
                             // wait for user
-
                         }
                         Thread.sleep(1000);
                     } catch ( InterruptedException e ) {
+                        // ok
+                    } catch ( IOException e ) {
                         // ok
                     }
                     break;
@@ -180,12 +176,13 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                         } else if ( command.equals(CMD_ABORT) ) {
                             reset(State.TOKEN_TIMEOUT);
                         } else {
-
                             log.info(State.CONNECT_BUTTON_IS_PRESSED + " Command " + command + " unknown");
                             reset(null);
-
                         }
                     } catch ( IOException servererror ) {
+                        log.info(State.CONNECT_BUTTON_IS_PRESSED + " " + servererror.getMessage());
+                        reset(State.ERROR_HTTP);
+                    } catch ( JSONException servererror ) {
                         log.info(State.CONNECT_BUTTON_IS_PRESSED + " " + servererror.getMessage());
                         reset(State.ERROR_HTTP);
                     }
