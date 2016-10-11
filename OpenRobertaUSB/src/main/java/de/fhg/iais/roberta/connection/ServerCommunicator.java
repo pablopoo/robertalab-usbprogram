@@ -67,8 +67,8 @@ public class ServerCommunicator {
      */
     public JSONObject pushRequest(JSONObject requestContent) throws IOException, JSONException {
         this.post = new HttpPost("http://" + this.serverpushAddress);
+        this.post.setHeader("User-Agent", "Java/1.7.0_60");
         StringEntity requestEntity = new StringEntity(requestContent.toString(), ContentType.create("application/json", "UTF-8"));
-        System.out.println(requestContent.toString());
         this.post.setEntity(requestEntity);
 
         CloseableHttpResponse response = this.httpclient.execute(this.post);
@@ -90,6 +90,7 @@ public class ServerCommunicator {
      */
     public byte[] downloadProgram(JSONObject requestContent) throws IOException {
         HttpPost post = new HttpPost("http://" + this.serverdownloadAddress);
+        post.setHeader("User-Agent", "Java/1.7.0_60");
         StringEntity requestEntity = new StringEntity(requestContent.toString(), ContentType.create("application/json", "UTF-8"));
         post.setEntity(requestEntity);
         CloseableHttpResponse response = this.httpclient.execute(post);
@@ -112,6 +113,7 @@ public class ServerCommunicator {
      */
     public byte[] downloadFirmwareFile(String fwFile) throws IOException {
         HttpGet get = new HttpGet("http://" + this.serverupdateAddress + "/" + fwFile);
+        get.setHeader("User-Agent", "Java/1.7.0_60");
         CloseableHttpResponse response = this.httpclient.execute(get);
         HttpEntity responseEntity = response.getEntity();
         byte[] binaryfile = null;
