@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
 
 import de.fhg.iais.roberta.util.ORAtokenGenerator;
@@ -46,11 +47,31 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
     }
 
     public void getPortName() throws Exception {
-        String ArduQueryResult = getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
-        Matcher m = Pattern.compile("(Silicon Labs CP210x USB to UART Bridge \\()(.*)\\)").matcher(ArduQueryResult);
-        while ( m.find() ) {
-            this.portName = m.group(2);
+        if ( SystemUtils.IS_OS_WINDOWS ) {
+            String ArduQueryResult = getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
+            Matcher m = Pattern.compile("(Silicon Labs CP210x USB to UART Bridge \\()(.*)\\)").matcher(ArduQueryResult);
+            while ( m.find() ) {
+                this.portName = m.group(2);
+            }
+
+        } else if ( SystemUtils.IS_OS_LINUX ) {
+            Runtime rt = Runtime.getRuntime();
+            Process pr = rt.exec("ls /dev/");
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+
+            String line = "";
+            while ( (line = reader.readLine()) != null ) {
+                Matcher m = Pattern.compile("(ttyUSB)").matcher(line);
+                if ( m.find() ) {
+                    this.portName = line;
+                    //  System.out.print(this.portName + "\n");
+
+                }
+            }
+
         }
+
     }
 
     //** jWMI from www.henryranch.net **//
@@ -194,26 +215,24 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                     try {
                         JSONObject serverResponse = this.servcomm.pushRequest(this.brickData);
                         String command = serverResponse.getString("cmd");
-                        if ( command.equals(CMD_REPEAT) ) {
-
-                            this.state = State.WAIT_FOR_CMD;
-                            notifyConnectionStateChanged(this.state);
-                        } else if ( command.equals(CMD_ABORT) ) {
-                            log.info("registration timeout");
-                            notifyConnectionStateChanged(State.TOKEN_TIMEOUT);
-                            this.state = State.DISCOVER;
-                            notifyConnectionStateChanged(this.state);
-                        } else {
-                            throw new RuntimeException("Unexpected command " + command + "from server");
+                        switch ( command ) {
+                            case CMD_REPEAT:
+                                this.state = State.WAIT_FOR_CMD;
+                                notifyConnectionStateChanged(this.state);
+                                break;
+                            case CMD_ABORT:
+                                log.info("registration timeout");
+                                notifyConnectionStateChanged(State.TOKEN_TIMEOUT);
+                                this.state = State.DISCOVER;
+                                notifyConnectionStateChanged(this.state);
+                                break;
+                            default:
+                                throw new RuntimeException("Unexpected command " + command + "from server");
                         }
-                    } catch ( IOException e ) {
-                        log.info("CONNECT " + e.getMessage());
-                        reset(State.ERROR_HTTP, false);
-                    } catch ( RuntimeException e ) {
+                    } catch ( IOException | RuntimeException e ) {
                         log.info("CONNECT " + e.getMessage());
                         reset(State.ERROR_HTTP, false);
                     }
-
                     break;
                 case WAIT_FOR_CMD:
                     try {
@@ -226,48 +245,46 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         break;
                     }
                     try {
-                        String cmd = this.servcomm.pushRequest(this.brickData).getString(KEY_CMD);
-                        if ( cmd.equals(CMD_REPEAT) ) {
-
-                        } else if ( cmd.equals(CMD_DOWNLOAD) ) {
-                            log.info("Download user program");
-                            try {
-                                byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
-                                String filename = this.servcomm.getFilename();
-                                File temp = File.createTempFile(filename, "");
-
-                                temp.deleteOnExit();
-
-                                if ( !temp.exists() ) {
-                                    throw new FileNotFoundException("File " + temp.getAbsolutePath() + " does not exist.");
-                                }
-
-                                FileOutputStream os = new FileOutputStream(temp);
+                        switch ( this.servcomm.pushRequest(this.brickData).getString(KEY_CMD) ) {
+                            case CMD_REPEAT:
+                                break;
+                            case CMD_DOWNLOAD:
+                                log.info("Download user program");
                                 try {
-                                    os.write(binaryfile);
-                                } finally {
-                                    os.close();
-                                }
+                                    byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
+                                    String filename = this.servcomm.getFilename();
+                                    File temp = File.createTempFile(filename, "");
 
-                                this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
-                                this.state = State.WAIT_EXECUTION;
-                            } catch ( IOException e ) {
-                                log.info("Download and run failed: " + e.getMessage());
-                                log.info("Do not give up yet - make the next push request");
-                                this.state = State.WAIT_FOR_CMD;
-                            } catch ( InterruptedException e ) {
-                                log.info("Download and run failed: " + e.getMessage());
-                                log.info("Do not give up yet - make the next push request");
-                                this.state = State.WAIT_FOR_CMD;
-                            }
-                        } else if ( cmd.equals(CMD_CONFIGURATION) ) {
-                        } else {
-                            throw new RuntimeException("Unexpected response from server");
+                                    temp.deleteOnExit();
+
+                                    if ( !temp.exists() ) {
+                                        throw new FileNotFoundException("File " + temp.getAbsolutePath() + " does not exist.");
+                                    }
+
+                                    FileOutputStream os = new FileOutputStream(temp);
+                                    try {
+                                        os.write(binaryfile);
+                                    } finally {
+                                        os.close();
+                                    }
+
+                                    this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
+                                    this.state = State.WAIT_EXECUTION;
+                                } catch ( IOException | InterruptedException e ) {
+                                    log.info("Download and run failed: " + e.getMessage());
+                                    log.info("Do not give up yet - make the next push request");
+                                    this.state = State.WAIT_FOR_CMD;
+                                }
+                                break;
+                            case CMD_CONFIGURATION:
+                                break;
+                            case CMD_UPDATE: // log and go to abort
+                                log.info("Firmware updated not necessary and not supported!");
+                            case CMD_ABORT: // go to default
+                            default:
+                                throw new RuntimeException("Unexpected response from server");
                         }
-                    } catch ( RuntimeException e ) {
-                        log.info("WAIT_FOR_CMD " + e.getMessage());
-                        reset(State.ERROR_HTTP, true);
-                    } catch ( IOException e ) {
+                    } catch ( RuntimeException | IOException e ) {
                         log.info("WAIT_FOR_CMD " + e.getMessage());
                         reset(State.ERROR_HTTP, true);
                     }
@@ -359,13 +376,44 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     @Override
     public boolean findRobot() {
+        boolean robotFound = false;
+        if ( SystemUtils.IS_OS_LINUX ) {
 
-        try {
-            getPortName();
-            return getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Silicon Labs");
-        } catch ( Exception e ) {
-            return false;
+            try {
+                getPortName();
+
+                Runtime rt_2 = Runtime.getRuntime();
+                Process pr_2 = rt_2.exec("ls /dev/serial/by-id");
+
+                BufferedReader reader_2 = new BufferedReader(new InputStreamReader(pr_2.getInputStream()));
+
+                String line_2 = "";
+                while ( (line_2 = reader_2.readLine()) != null ) {
+                    Matcher m_2 = Pattern.compile("(usb-Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller)").matcher(line_2);
+                    if ( m_2.find() ) {
+                        robotFound = true;
+                    }
+                }
+                return robotFound;
+            } catch ( Exception e ) {
+                return false;
+            }
+
         }
+
+        else if ( SystemUtils.IS_OS_WINDOWS ) {
+            try {
+                getPortName();
+                robotFound = getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Silicon Labs");
+            } catch ( Exception e ) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        return robotFound;
+
     }
 
     @Override
