@@ -12,6 +12,11 @@ a usb connection.
     mvn clean install
 
 
+### Run USB program
+
+   java -jar ./OpenRobertaUSB/target/OpenRobertaUSB-*-SNAPSHOT.jar
+
+
 ### Development notes
 
 You can follow the test status on https://travis-ci.org/OpenRoberta/.
