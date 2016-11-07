@@ -1,5 +1,6 @@
 # robertalab-usbprogram
-Standalone program for conecting an EV3 robot to Open Roberta lab using usb connection
+Standalone program for connecting the robot hardware to Open Roberta lab using
+a usb connection.
 
 
 ### Fast installation with maven
