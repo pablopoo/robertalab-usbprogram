@@ -3,6 +3,7 @@ package lejos.pc.comm;
 import java.io.IOException;
 
 import lejos.internal.jni.JNIClass;
+import lejos.internal.jni.JNIException;
 import lejos.internal.jni.JNILoader;
 import lejos.internal.jni.OSInfo;
 
@@ -73,10 +74,28 @@ public class NXTCommFactory {
                 throw new NXTCommException("unknown protocol");
         }
 
-        return newNXTCommInstance(nxtCommName, jnil);
+        try {
+            return newNXTCommInstance(nxtCommName, jnil);
+
+        } catch ( NXTCommException e ) {
+            throw new NXTCommException(e);
+        } catch ( ClassNotFoundException e ) {
+            throw new NXTCommException(e);
+        } catch ( InstantiationException e ) {
+            throw new NXTCommException(e);
+        } catch ( IllegalAccessException e ) {
+            throw new NXTCommException(e);
+        } catch ( JNIException e ) {
+            throw new NXTCommException(e);
+        }
     }
 
-    private static NXTComm newNXTCommInstance(String classname, JNILoader jnil) throws NXTCommException {
+    private static NXTComm newNXTCommInstance(String classname, JNILoader jnil)
+        throws NXTCommException,
+        ClassNotFoundException,
+        JNIException,
+        InstantiationException,
+        IllegalAccessException {
         try {
             Class<?> c = Class.forName(classname);
             Object o = c.newInstance();
@@ -86,7 +105,7 @@ public class NXTCommFactory {
             }
 
             return (NXTComm) o;
-        } catch ( Exception e ) {
+        } catch ( UnsatisfiedLinkError e ) {
             throw new NXTCommException("Cannot load NXTComm driver", e);
         }
     }

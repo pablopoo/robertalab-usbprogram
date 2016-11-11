@@ -19,6 +19,7 @@ public class ArduCommunicator {
     String connOptions;
     String line;
     String osKey = "";
+    String osKeyPath = "";
     String avrPath; //path for avrdude bin
     String avrConfPath; //path for the .conf file
     //Boolean uploadInProgress;
@@ -50,15 +51,21 @@ public class ArduCommunicator {
     public void setParameters() {
         if ( SystemUtils.IS_OS_WINDOWS ) {
             this.osKey = "WinPath";
+            this.osKeyPath = "WinConfPath";
             this.avrPath = this.commProperties.getProperty(this.osKey);
+            this.avrConfPath = this.commProperties.getProperty(this.osKeyPath);
 
         } else if ( SystemUtils.IS_OS_LINUX ) {
             this.osKey = "LinPath";
+            this.osKeyPath = "LinConfPath";
             this.avrPath = this.commProperties.getProperty(this.osKey);
+            this.avrConfPath = this.commProperties.getProperty(this.osKeyPath);
 
         } else {
             this.osKey = "OsXPath";
+            this.osKeyPath = "MacConfPath";
             this.avrPath = this.commProperties.getProperty(this.osKey);
+            this.avrConfPath = this.commProperties.getProperty(this.osKeyPath);
 
         }
         this.connOptions = " -V -F -p m328p -c arduino -b 115200 ";
@@ -101,7 +108,7 @@ public class ArduCommunicator {
                 "-pm328p",
                 "-carduino",
                 "-Uflash:w:" + filePath + ":i",
-                "-C" + this.avrPath + ".conf",
+                "-C" + this.avrConfPath,
                 "-P/dev/" + portName
             });
 

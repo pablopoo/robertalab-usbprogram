@@ -39,6 +39,7 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
     public boolean findRobot() {
         DiscoverNXT discoverNXT = new DiscoverNXT();
         return discoverNXT.discover();
+
     }
 
     @Override

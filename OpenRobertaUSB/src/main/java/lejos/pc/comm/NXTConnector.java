@@ -43,13 +43,14 @@ public class NXTConnector {
                 } catch ( NXTCommException ex ) {
                     log.severe("Error: Search failed. " + ex);
                 }
+                try {
+                    nxtComm.close();
+                    nxtComm = null;
+                } catch ( IOException e ) {
+                    log.warning("Error closing USB nxtComm. " + e);
+                }
             }
-            try {
-                nxtComm.close();
-                nxtComm = null;
-            } catch ( IOException e ) {
-                log.warning("Error closing USB nxtComm. " + e);
-            }
+
         }
 
         if ( nxtInfos.length > 0 ) {
