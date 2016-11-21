@@ -1,18 +1,18 @@
 package de.fhg.iais.roberta.connection;
 
-import java.io.BufferedInputStream;
+//import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
-import javax.net.ssl.HttpsURLConnection;
-
-import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
+//import org.apache.commons.io.IOUtils;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -68,7 +68,12 @@ public class ServerCommunicator {
      * @throws IOException if the server is unreachable for whatever reason.
      */
     public JSONObject pushRequest(JSONObject requestContent) throws IOException, JSONException {
-        URL url = new URL("https://" + this.serverpushAddress);
+        this.post = new HttpPost("http://" + this.serverpushAddress);
+        this.post.setHeader("User-Agent", "Java/1.7.0_60");
+        StringEntity requestEntity = new StringEntity(requestContent.toString(), ContentType.create("application/json", "UTF-8"));
+        this.post.setEntity(requestEntity);
+
+        /*  URL url = new URL("https://" + this.serverpushAddress);
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
         conn.setDoOutput(true);
 
@@ -86,15 +91,19 @@ public class ServerCommunicator {
             throw new IOException("Failed : HTTP error code : " + conn.getResponseCode());
         }
 
-        InputStream responseEntity = new BufferedInputStream(conn.getInputStream());
+        InputStream responseEntity = new BufferedInputStream(conn.getInputStream()); */
 
+        CloseableHttpResponse response = this.httpclient.execute(this.post);
+        HttpEntity responseEntity = response.getEntity();
         String responseText = "";
         if ( responseEntity != null ) {
-            responseText = IOUtils.toString(responseEntity, "UTF-8");
+            responseText = EntityUtils.toString(responseEntity);
+            //           responseText = IOUtils.toString(responseEntity, "UTF-8");
         }
+        response.close();
 
-        responseEntity.close();
-        conn.disconnect();
+        //      responseEntity.close();
+        //      conn.disconnect();
 
         return new JSONObject(responseText);
     }
@@ -107,7 +116,15 @@ public class ServerCommunicator {
      * @throws IOException if the server is unreachable or something is wrong with the binary content.
      */
     public byte[] downloadProgram(JSONObject requestContent) throws IOException {
-        URL url = new URL("https://" + this.serverdownloadAddress);
+
+        HttpPost post = new HttpPost("http://" + this.serverdownloadAddress);
+        post.setHeader("User-Agent", "Java/1.7.0_60");
+        StringEntity requestEntity = new StringEntity(requestContent.toString(), ContentType.create("application/json", "UTF-8"));
+        post.setEntity(requestEntity);
+        CloseableHttpResponse response = this.httpclient.execute(post);
+        HttpEntity responseEntity = response.getEntity();
+
+        /*  URL url = new URL("https://" + this.serverdownloadAddress);
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
         conn.setDoOutput(true);
 
@@ -124,16 +141,19 @@ public class ServerCommunicator {
             throw new IOException("Failed : HTTP error code : " + conn.getResponseCode());
         }
 
-        InputStream responseEntity = new BufferedInputStream(conn.getInputStream());
+        InputStream responseEntity = new BufferedInputStream(conn.getInputStream()); */
 
         byte[] binaryfile = null;
         if ( responseEntity != null ) {
-            this.filename = conn.getHeaderField("Filename");
-            binaryfile = IOUtils.toByteArray(responseEntity);
-        }
 
-        responseEntity.close();
-        conn.disconnect();
+            this.filename = response.getFirstHeader("Filename").getValue();
+            binaryfile = EntityUtils.toByteArray(responseEntity);
+            //  this.filename = conn.getHeaderField("Filename");
+            //  binaryfile = IOUtils.toByteArray(responseEntity);
+        }
+        response.close();
+        // responseEntity.close();
+        //conn.disconnect();
 
         return binaryfile;
     }
@@ -147,7 +167,12 @@ public class ServerCommunicator {
      */
     public byte[] downloadFirmwareFile(String fwFile) throws IOException {
 
-        URL url = new URL("https://" + this.serverupdateAddress + "/" + fwFile);
+        HttpGet get = new HttpGet("http://" + this.serverupdateAddress + "/" + fwFile);
+        get.setHeader("User-Agent", "Java/1.7.0_60");
+        CloseableHttpResponse response = this.httpclient.execute(get);
+        HttpEntity responseEntity = response.getEntity();
+
+        /*  URL url = new URL("https://" + this.serverupdateAddress + "/" + fwFile);
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
 
         conn.setDoInput(true);
@@ -160,16 +185,20 @@ public class ServerCommunicator {
             throw new IOException("Failed : HTTP error code : " + conn.getResponseCode());
         }
 
-        InputStream responseEntity = new BufferedInputStream(conn.getInputStream());
+        InputStream responseEntity = new BufferedInputStream(conn.getInputStream()); */
 
         byte[] binaryfile = null;
         if ( responseEntity != null ) {
-            this.filename = conn.getHeaderField("Filename");
-            binaryfile = IOUtils.toByteArray(responseEntity);
-        }
+            this.filename = response.getFirstHeader("Filename").getValue();
+            binaryfile = EntityUtils.toByteArray(responseEntity);
 
-        responseEntity.close();
-        conn.disconnect();
+            //   this.filename = conn.getHeaderField("Filename");
+            //   binaryfile = IOUtils.toByteArray(responseEntity);
+        }
+        response.close();
+
+        //  responseEntity.close();
+        //  conn.disconnect();
 
         return binaryfile;
     }
