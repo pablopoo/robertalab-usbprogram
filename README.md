@@ -16,6 +16,7 @@ a usb connection.
 
    java -jar ./OpenRobertaUSB/target/OpenRobertaUSB-*-SNAPSHOT.jar
 
+For the using the NXT with the USB program use 32bit Java.
 
 ### Development notes
 
