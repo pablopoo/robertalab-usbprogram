@@ -17,7 +17,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * The server communicator emulates an EV3 brick. This class provides access to push requests, downloads the user program and download system libraries for
+ * The server communicator runs the server protocol on behalf of the actual robot hardware.
+ * This class provides access to push requests, downloads the user program and download system libraries for
  * the upload funtion.
  *
  * @author dpyka
