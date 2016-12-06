@@ -116,6 +116,19 @@ public class NXTCommunicator {
         }
     }
 
+    public void playProgramDownload() throws IOException {
+        int C2 = 300;
+        for ( int i = 12; i < 16; i++ ) {
+            this.nxtCommand.playTone(C2 * i / 8, 100);
+
+            try {
+                Thread.sleep(100);
+            } catch ( InterruptedException e ) {
+                // ok
+            }
+        }
+    }
+
     /**
      * @return true if a program is currently running, false otherwise
      * @throws IOException
@@ -153,18 +166,20 @@ public class NXTCommunicator {
         }
     }
 
-    public void playConnectionSound(boolean isAscending) {
+    public void playSound(String type) {
         try {
             connect();
-            if ( isAscending ) {
+            if ( type.equals("connect") ) {
                 playAscending();
-            } else {
+            } else if ( type.equals("disconnect") ) {
                 playDescending();
+            } else if ( type.equals("download") ) {
+                playProgramDownload();
             }
         } catch ( IOException e ) {
-            log.info("playing " + (isAscending ? "ascending" : "descending") + " sound sequence failed");
+            log.info("playing " + type + " sound sequence failed");
         } catch ( NXTCommException e ) {
-            log.info("playing " + (isAscending ? "ascending" : "descending") + " sound sequence failed");
+            log.info("playing " + type + " sound sequence failed");
         } finally {
             disconnect();
         }

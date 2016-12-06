@@ -57,7 +57,7 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
                         JSONObject deviceInfo = this.nxtcomm.getDeviceInfo();
                         if ( !this.token.equals("") && !this.macAddr.equals("") && !this.brickName.equals("") ) {
                             if ( this.macAddr.equals(deviceInfo.optString("macaddr", "")) && this.brickName.equals(deviceInfo.optString("brickname", "")) ) {
-                                this.nxtcomm.playConnectionSound(true);
+                                this.nxtcomm.playSound("connect");
                                 this.state = State.WAIT_FOR_CMD;
                                 notifyConnectionStateChanged(State.RECONNECT);
                             }
@@ -100,7 +100,7 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
                             log.info("registration successful");
                             this.brickName = deviceInfo.getString("brickname");
                             this.macAddr = deviceInfo.getString("macaddr");
-                            this.nxtcomm.playConnectionSound(true);
+                            this.nxtcomm.playSound("connect");
                             this.state = State.WAIT_FOR_CMD;
                             notifyConnectionStateChanged(this.state);
                         } else if ( command.equals(CMD_ABORT) ) {
@@ -145,6 +145,7 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
                                 boolean success = uploadProgram(binaryfile, filename);
                                 if ( success ) {
                                     this.state = State.WAIT_EXECUTION;
+                                    this.nxtcomm.playSound("download");
                                 } else {
                                     reset(State.ERROR_DOWNLOAD);
                                 }
@@ -211,7 +212,7 @@ public class NXTUSBBTConnector extends Observable implements Runnable, Connector
      * @param additionalerrormessage message for popup
      */
     private void reset(State additionalerrormessage) {
-        this.nxtcomm.playConnectionSound(false);
+        this.nxtcomm.playSound("disconnect");
         if ( (!this.userDisconnect) && (additionalerrormessage != null) ) {
             notifyConnectionStateChanged(additionalerrormessage);
         }

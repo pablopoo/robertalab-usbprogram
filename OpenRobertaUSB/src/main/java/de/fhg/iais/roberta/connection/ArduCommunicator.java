@@ -1,7 +1,6 @@
 package de.fhg.iais.roberta.connection;
 
 import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
 //import java.lang.ProcessBuilder.Redirect;
 import java.util.Properties;
 
@@ -112,9 +111,9 @@ public class ArduCommunicator {
                 "-P/dev/" + portName
             });
 
-            procBuilder.redirectInput(Redirect.INHERIT);
-            procBuilder.redirectOutput(Redirect.INHERIT);
-            procBuilder.redirectError(Redirect.INHERIT);
+            //            procBuilder.redirectInput(Redirect.INHERIT);
+            //            procBuilder.redirectOutput(Redirect.INHERIT);
+            //            procBuilder.redirectError(Redirect.INHERIT);
             Process p = procBuilder.start();
             int ecode = p.waitFor();
             System.err.println("Exit code " + ecode);
