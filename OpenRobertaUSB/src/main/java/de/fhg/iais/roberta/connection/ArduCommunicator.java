@@ -1,7 +1,6 @@
 package de.fhg.iais.roberta.connection;
 
 import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
 //import java.lang.ProcessBuilder.Redirect;
 import java.util.Properties;
 
@@ -100,8 +99,8 @@ public class ArduCommunicator {
     public void uploadFile(String portName, String filePath) throws IOException, InterruptedException {
         setParameters();
         String portPath = "/dev/";
-        if (SystemUtils.IS_OS_WINDOWS) {
-        	portPath = "";
+        if ( SystemUtils.IS_OS_WINDOWS ) {
+            portPath = "";
         }
         try {
             ProcessBuilder procBuilder = new ProcessBuilder(new String[] {
@@ -114,17 +113,15 @@ public class ArduCommunicator {
                 "-C" + this.avrConfPath,
                 "-P" + portPath + portName
             });
-           
 
-            procBuilder.redirectInput(Redirect.INHERIT);
-            procBuilder.redirectOutput(Redirect.INHERIT);
-            procBuilder.redirectError(Redirect.INHERIT);
+            //            procBuilder.redirectInput(Redirect.INHERIT);
+            //            procBuilder.redirectOutput(Redirect.INHERIT);
+            //            procBuilder.redirectError(Redirect.INHERIT);
             Process p = procBuilder.start();
             int ecode = p.waitFor();
             System.err.println("Exit code " + ecode);
 
         } catch ( Exception e ) {
-
             e.printStackTrace();
 
         }
