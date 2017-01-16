@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <DirectoryRef Id="RESOURCES">
+            <Directory Id="dirE162B127D059AC91B561491C52547043" Name="linux" />
+            <Directory Id="dirAC11EE9A591E70FCA0FEB17DA5DD96E0" Name="osx" />
+            <Directory Id="dir452EEE4B5DF39BBAA9C2EFED673BF4E1" Name="windows" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="ResGroupID">
+            <Component Id="cmpD66868EDFED3539AC9BD6D5250323B7D" Directory="RESOURCES" Guid="{0902B99A-B8C4-494F-B3BA-06342FF59BC1}">
+                <File Id="filFB04B71DC5D75B734F433080A2BC740B" KeyPath="yes" Source="SourceDir\properties.txt" />
+            </Component>
+            <Component Id="cmp3C1C481F6CFD382CE2673CA249E5EEE1" Directory="dir3D6D89B20DE7932AE94A9E314A93E38D" Guid="{C93A1C73-70B2-4B35-AA88-3043089FA132}">
+                <File Id="filC62AF1E3B8490BC22B6C595769A75FC8" KeyPath="yes" Source="SourceDir\linux\arduino\.keep" />
+            </Component>
+            <Component Id="cmpBB78E2606CB36F66A226EB3C96FFD77A" Directory="dir3D6D89B20DE7932AE94A9E314A93E38D" Guid="{3E875974-674B-4795-BEDC-41BBB228DC8F}">
+                <File Id="filAA28701169052216CB978AC42294E475" KeyPath="yes" Source="SourceDir\linux\arduino\avrdude" />
+            </Component>
+            <Component Id="cmp8393C75055C336FB74CED4081B268F13" Directory="dir222B4BC79044EBF0056A1076D2643FA1" Guid="{A6108734-1985-4D42-A577-5D78DA35F60C}">
+                <File Id="filADB2771DEECF18674E27AC7FF8E6D699" KeyPath="yes" Source="SourceDir\osx\arduino\.keep" />
+            </Component>
+            <Component Id="cmpA8DC04F23D0B96F61E7C61F696F00190" Directory="dirB00B92B8385E211176B271A84A938C60" Guid="{94A15CF5-09DF-4D1E-96B2-2775999ACA0B}">
+                <File Id="fil1B2624FBA806F0F1AD9028D8CE28CB98" KeyPath="yes" Source="SourceDir\windows\arduino\avrdude.conf" />
+            </Component>
+            <Component Id="cmpEF3B2CB4EC8AEB6CEA9199A7C0E87699" Directory="dirB00B92B8385E211176B271A84A938C60" Guid="{720C6C33-A832-4593-B966-42B1469FEF0D}">
+                <File Id="fil0BDEC6CD247FDD7AD2267581C53CFF77" KeyPath="yes" Source="SourceDir\windows\arduino\avrdude.exe" />
+            </Component>
+            <Component Id="cmp63FF09162BABC6DC5B2139C6941BF48A" Directory="dirB00B92B8385E211176B271A84A938C60" Guid="{A7273F75-D473-4381-97E5-FAC5406DCCC1}">
+                <File Id="fil636A874E2D6DF8E80E374738C62FDDFC" KeyPath="yes" Source="SourceDir\windows\arduino\libusb0.dll" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirAC11EE9A591E70FCA0FEB17DA5DD96E0">
+            <Directory Id="dir222B4BC79044EBF0056A1076D2643FA1" Name="arduino" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dirE162B127D059AC91B561491C52547043">
+            <Directory Id="dir3D6D89B20DE7932AE94A9E314A93E38D" Name="arduino" />
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="dir452EEE4B5DF39BBAA9C2EFED673BF4E1">
+            <Directory Id="dirB00B92B8385E211176B271A84A938C60" Name="arduino" />
+        </DirectoryRef>
+    </Fragment>
+</Wix>

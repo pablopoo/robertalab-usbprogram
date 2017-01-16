@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>de.fhg.iais.openroberta</groupId>
   <artifactId>OpenRobertaUSB</artifactId>
-  <version>2.0.2-SNAPSHOT</version>
+  <version>2.0.3-SNAPSHOT</version>
   <build>
     <plugins>
       <plugin>
@@ -86,7 +86,7 @@
       <plugin>
         <groupId>com.akathist.maven.plugins.launch4j</groupId>
         <artifactId>launch4j-maven-plugin</artifactId>
-        <version>1.7.12</version>
+        <version>1.7.15</version>
         <executions>
           <execution>
             <id>l4j-clui</id>
@@ -98,7 +98,7 @@
               <dontWrapJar>false</dontWrapJar>
               <headerType>gui</headerType>
               <jar>${basedir}/target/OpenRobertaUSB-${project.version}.jar</jar>
-              <outfile>${basedir}/USBinstaller/Windows/OpenRobertaUSB.exe</outfile>
+              <outfile>${basedir}/../Resources/USBInstaller/Windows/OpenRobertaUSB.exe</outfile>
               <errTitle />
               <cmdLine />
               <chdir>.</chdir>
@@ -122,7 +122,7 @@
                 <path>java/</path>
                 <bundledJre64Bit>false</bundledJre64Bit>
                 <bundledJreAsFallback>false</bundledJreAsFallback>
-                <minVersion>1.7.0_0</minVersion>
+                <minVersion>1.6.0_0</minVersion>
                 <maxVersion />
                 <jdkPreference>jreOnly</jdkPreference>
                 <runtimeBits>64/32</runtimeBits>

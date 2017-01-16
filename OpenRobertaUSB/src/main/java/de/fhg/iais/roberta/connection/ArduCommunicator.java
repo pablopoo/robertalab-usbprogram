@@ -99,7 +99,10 @@ public class ArduCommunicator {
 
     public void uploadFile(String portName, String filePath) throws IOException, InterruptedException {
         setParameters();
-
+        String portPath = "/dev/";
+        if (SystemUtils.IS_OS_WINDOWS) {
+        	portPath = "";
+        }
         try {
             ProcessBuilder procBuilder = new ProcessBuilder(new String[] {
                 this.avrPath,
@@ -109,8 +112,9 @@ public class ArduCommunicator {
                 "-carduino",
                 "-Uflash:w:" + filePath + ":i",
                 "-C" + this.avrConfPath,
-                "-P/dev/" + portName
+                "-P" + portPath + portName
             });
+           
 
             procBuilder.redirectInput(Redirect.INHERIT);
             procBuilder.redirectOutput(Redirect.INHERIT);
