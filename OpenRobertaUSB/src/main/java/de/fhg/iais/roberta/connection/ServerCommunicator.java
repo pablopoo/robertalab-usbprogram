@@ -77,21 +77,21 @@ public class ServerCommunicator {
         /*  URL url = new URL("https://" + this.serverpushAddress);
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
         conn.setDoOutput(true);
-
+        
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Accept", "application/json");
         conn.setRequestProperty("Accept-Charset", "UTF-8");
-
+        
         OutputStream os = conn.getOutputStream();
         os.write(requestContent.toString().getBytes("UTF-8"));
         os.flush();
         os.close();
-
+        
         if ( conn.getResponseCode() != HttpURLConnection.HTTP_OK ) {
             throw new IOException("Failed : HTTP error code : " + conn.getResponseCode());
         }
-
+        
         InputStream responseEntity = new BufferedInputStream(conn.getInputStream()); */
 
         CloseableHttpResponse response = this.httpclient.execute(this.post);
@@ -128,7 +128,7 @@ public class ServerCommunicator {
         /*  URL url = new URL("https://" + this.serverdownloadAddress);
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
         conn.setDoOutput(true);
-
+        
         conn.setRequestMethod("POST");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Accept", "application/octet-stream");
@@ -137,11 +137,11 @@ public class ServerCommunicator {
         os.write(requestContent.toString().getBytes("UTF-8"));
         os.flush();
         os.close();
-
+        
         if ( conn.getResponseCode() != HttpURLConnection.HTTP_OK ) {
             throw new IOException("Failed : HTTP error code : " + conn.getResponseCode());
         }
-
+        
         InputStream responseEntity = new BufferedInputStream(conn.getInputStream()); */
 
         byte[] binaryfile = null;
@@ -175,17 +175,17 @@ public class ServerCommunicator {
 
         /*  URL url = new URL("https://" + this.serverupdateAddress + "/" + fwFile);
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-
+        
         conn.setDoInput(true);
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Content-Type", "application/json");
         conn.setRequestProperty("Accept", "application/octet-stream");
         conn.setRequestProperty("Accept-Charset", "UTF-8");
-
+        
         if ( conn.getResponseCode() != HttpURLConnection.HTTP_OK ) {
             throw new IOException("Failed : HTTP error code : " + conn.getResponseCode());
         }
-
+        
         InputStream responseEntity = new BufferedInputStream(conn.getInputStream()); */
 
         byte[] binaryfile = null;

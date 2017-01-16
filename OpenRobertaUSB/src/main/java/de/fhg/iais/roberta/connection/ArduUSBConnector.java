@@ -300,6 +300,8 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         log.info("WAIT_FOR_CMD " + e.getMessage());
                         reset(State.ERROR_HTTP, true);
                     }
+                default:
+                    break;
             }
         }
     }
@@ -334,8 +336,12 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     @Override
     public void userPressDisconnectButton() {
+        log.info("DISCONNECTING by user");
         this.userDisconnect = true;
-        this.servcomm.abort(); // will throw exception, reset will be called in catch statement
+        this.arducomm.disconnect();
+
+        this.servcomm.abort();
+
     }
 
     @Override
