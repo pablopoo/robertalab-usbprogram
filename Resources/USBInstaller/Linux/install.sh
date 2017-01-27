@@ -11,7 +11,5 @@ echo "Terminal= True" >> "/usr/share/applications/ORUSB.desktop"
 echo "Type= Application" >> "/usr/share/applications/ORUSB.desktop"
 echo "StartupNotify= True" >> "/usr/share/applications/ORUSB.desktop"
 
-usermod -a -G dialout $USER
-
-
 chmod u+x "/usr/share/applications/ORUSB.desktop"
+
