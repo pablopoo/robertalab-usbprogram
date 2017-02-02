@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Observable;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -17,7 +18,6 @@ import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
 
 import de.fhg.iais.roberta.util.ORAtokenGenerator;
-import jssc.SerialPortException;
 
 public class ArduUSBConnector extends Observable implements Runnable, Connector {
 
@@ -70,6 +70,21 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                 }
             }
 
+        } else if ( SystemUtils.IS_OS_MAC_OSX ) {
+            Runtime rt = Runtime.getRuntime();
+            Process pr = rt.exec("ls /dev/");
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()));
+
+            String line = "";
+            while ( (line = reader.readLine()) != null ) {
+                Matcher m = Pattern.compile("(cu.SLAB_USBtoUART)").matcher(line);
+                if ( m.find() ) {
+                    this.portName = line;
+                    //  System.out.print(this.portName + "\n");
+
+                }
+            }
         }
 
     }
@@ -312,18 +327,9 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
      * @param additionalerrormessage message for popup
      */
     private void reset(State additionalerrormessage, boolean playDisconnectSound) {
-        if ( playDisconnectSound ) {
-            try {
-                this.arducomm.connect();
-                //                //                this.arducomm.playDescending();
-            } catch ( SerialPortException e ) {
-                log.info("reset - Play descending failed");
-            }
-        }
         if ( (!this.userDisconnect) && (additionalerrormessage != null) ) {
             notifyConnectionStateChanged(additionalerrormessage);
         }
-        this.arducomm.disconnect();
         this.userDisconnect = false;
         this.state = State.DISCOVER;
         notifyConnectionStateChanged(this.state);
@@ -338,10 +344,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
     public void userPressDisconnectButton() {
         log.info("DISCONNECTING by user");
         this.userDisconnect = true;
-        this.arducomm.disconnect();
-
         this.servcomm.abort();
-
     }
 
     @Override
@@ -391,44 +394,51 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     @Override
     public boolean findRobot() {
-        boolean robotFound = false;
         if ( SystemUtils.IS_OS_LINUX ) {
+            return findArduinoLinux();
+        } else if ( SystemUtils.IS_OS_WINDOWS ) {
+            return findArduWindows();
+        } else if ( SystemUtils.IS_OS_MAC_OSX ) {
+            return findArduinoMac();
+        } else {
+            return false;
+        }
 
-            try {
-                getPortName();
+    }
 
-                Runtime rt_2 = Runtime.getRuntime();
-                Process pr_2 = rt_2.exec("ls /dev/serial/by-id");
-
-                BufferedReader reader_2 = new BufferedReader(new InputStreamReader(pr_2.getInputStream()));
-
-                String line_2 = "";
-                while ( (line_2 = reader_2.readLine()) != null ) {
-                    Matcher m_2 = Pattern.compile("(usb-Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller)").matcher(line_2);
-                    if ( m_2.find() ) {
-                        robotFound = true;
-                    }
+    private boolean findArduinoMac() {
+        try {
+            File file = new File("/dev/");
+            String[] directories = file.list();
+            for ( String directory : directories ) {
+                if ( directory.startsWith("cu.SLAB_USBtoUART") ) {
+                    return true;
                 }
-                return robotFound;
-            } catch ( Exception e ) {
-                return false;
             }
-
+            return false;
+        } catch ( Exception e ) {
+            return false;
         }
+    }
 
-        else if ( SystemUtils.IS_OS_WINDOWS ) {
-            try {
-                getPortName();
-                robotFound = getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Silicon Labs");
-            } catch ( Exception e ) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-                return false;
-            }
+    private boolean findArduWindows() {
+        try {
+            return getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Silicon Labs");
+        } catch ( Exception e ) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return false;
         }
+    }
 
-        return robotFound;
-
+    private boolean findArduinoLinux() {
+        try {
+            File file = new File("/dev/serial/by-id/");
+            String[] directories = file.list();
+            return Arrays.asList(directories).contains("usb-Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller");
+        } catch ( Exception e ) {
+            return false;
+        }
     }
 
     @Override

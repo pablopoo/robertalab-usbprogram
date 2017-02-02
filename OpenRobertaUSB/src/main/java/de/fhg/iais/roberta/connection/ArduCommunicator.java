@@ -9,7 +9,6 @@ import org.json.JSONObject;
 
 import de.fhg.iais.roberta.util.Utils;
 import jssc.SerialPort;
-import jssc.SerialPortException;
 
 public class ArduCommunicator {
     private final Properties commProperties;
@@ -27,24 +26,6 @@ public class ArduCommunicator {
         this.portName = portName;
         this.commProperties = Utils.loadProperties("classpath:OpenRobertaUSB.properties");
         // this.connOptions = "";
-    }
-
-    public void connect() throws SerialPortException {
-        this.serialPort = new SerialPort(this.portName);
-        if ( this.serialPort.isOpened() == false ) {
-            this.serialPort.openPort();// Open serial port
-            this.serialPort.setParams(SerialPort.BAUDRATE_9600, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
-        }
-    }
-
-    public void disconnect() {
-        try {
-            if ( this.serialPort != null && this.serialPort.isOpened() ) {
-                this.serialPort.closePort();
-            }
-        } catch ( SerialPortException ex ) {
-            System.out.println(ex);
-        }
     }
 
     public void setParameters() {

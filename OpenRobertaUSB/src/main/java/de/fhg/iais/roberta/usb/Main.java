@@ -97,7 +97,6 @@ public class Main {
         Thread t = null;
         while ( true ) {
             if ( startupFinish ) {
-
                 if ( nxtusbbtcon.findRobot() ) {
                     log.info("NXT found!");
                     controller.setConnector(nxtusbbtcon);
