@@ -7,7 +7,6 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.Observable;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -435,7 +434,12 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
         try {
             File file = new File("/dev/serial/by-id/");
             String[] directories = file.list();
-            return Arrays.asList(directories).contains("usb-Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller");
+            for ( String directory : directories ) {
+                if ( directory.matches(".*Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller.*") ) {
+                    return true;
+                }
+            }
+            return false;
         } catch ( Exception e ) {
             return false;
         }
