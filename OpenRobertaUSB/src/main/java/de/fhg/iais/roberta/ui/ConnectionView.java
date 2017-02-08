@@ -32,7 +32,7 @@ import de.fhg.iais.roberta.ui.UIController.ConnectActionListener;
 public class ConnectionView extends JFrame {
 
     private static final long serialVersionUID = 1L;
-    private static final int WIDTH = 300;
+    private static final int WIDTH = 310;
     private static final int HEIGHT = 400;
     private static final int ADVANCED_HEIGHT = 460;
 
@@ -206,7 +206,7 @@ public class ConnectionView extends JFrame {
         this.customipDesc.setText(this.messages.getString("ip"));
         this.pnlCustomAddress.add(Box.createVerticalGlue());
         this.pnlCustomAddress.add(this.customip);
-        this.pnlCustomAddress.add(Box.createHorizontalStrut(12));
+        this.pnlCustomAddress.add(Box.createHorizontalStrut(1));
         this.pnlCustomAddress.add(this.customportDesc);
         this.customportDesc.setText(this.messages.getString("port"));
         this.pnlCustomAddress.add(this.customport);
