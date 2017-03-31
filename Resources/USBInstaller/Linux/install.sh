@@ -9,7 +9,7 @@ if [ -f /etc/debian_version ]; then
 elif [ -f /etc/redhat-release ]; then
     dnf update
     dnf install glibc.i686 libXext.i686 libXrender.i686 libXtst.i686 libXi.i686 libusb.i686 
-#elif ... other distros
+#elif ... other distributions
 fi
 
 
