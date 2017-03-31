@@ -21,7 +21,7 @@ else
   echo "# Lego NXT brick in normal mode" >> "/etc/udev/rules.d/70-lego.rules"
   echo 'SUBSYSTEM=="usb", DRIVER=="usb", ATTRS{idVendor}=="0694", ATTRS{idProduct}=="0002", GROUP="lego", MODE="0660"' >> "/etc/udev/rules.d/70-lego.rules"
   echo '# Lego NXT brick in firmware update mode (Atmel SAM-BA mode)' >> "/etc/udev/rules.d/70-lego.rules"
-  echo 'SUBSYSTEM=="usb", DRIVER=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="6124", GROUP="lego", MODE="0660"' >> "/etc/udev/rules.d/70-dnflego.rules"
+  echo 'SUBSYSTEM=="usb", DRIVER=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="6124", GROUP="lego", MODE="0660"' >> "/etc/udev/rules.d/70-lego.rules"
 fi
 
 echo "[Desktop Entry]" > "/usr/share/applications/ORUSB.desktop"
