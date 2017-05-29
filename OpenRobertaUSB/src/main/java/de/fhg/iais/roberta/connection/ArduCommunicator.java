@@ -55,7 +55,7 @@ public class ArduCommunicator {
     public JSONObject getDeviceInfo() throws IOException {
         JSONObject deviceInfo = new JSONObject();
 
-        deviceInfo.put("firmwarename", "botnroll");
+        deviceInfo.put("firmwarename", "Arduino");
         deviceInfo.put("robot", "botnroll");
         deviceInfo.put("firmwareversion", "1.1.1");
         deviceInfo.put("macaddr", "0.121.99");
