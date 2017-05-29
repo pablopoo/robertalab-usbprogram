@@ -96,8 +96,8 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
         vbs += "Dim obj, strData" + CRLF;
         vbs += "For Each obj in classComponent" + CRLF;
         String[] wmiFieldNameArray = wmiCommaSeparatedFieldName.split(",");
-        for ( int i = 0; i < wmiFieldNameArray.length; i++ ) {
-            vbs += "  strData = strData & obj." + wmiFieldNameArray[i] + " & VBCrLf" + CRLF;
+        for ( String element : wmiFieldNameArray ) {
+            vbs += "  strData = strData & obj." + element + " & VBCrLf" + CRLF;
         }
         vbs += "Next" + CRLF;
         vbs += "wscript.echo strData" + CRLF;
@@ -447,7 +447,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     @Override
     public String getBrickName() {
-        return "Ardu";
+        return "botnroll";
     }
 
 }
