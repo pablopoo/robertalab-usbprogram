@@ -8,8 +8,14 @@ if [ -f /etc/debian_version ]; then
     apt-get install -y libc6-i386 libxext6:i386 libxrender1:i386 libxtst6:i386 libxi6:i386 libusb-0.1-4:i386
 elif [ -f /etc/redhat-release ]; then
     dnf update
-    dnf install glibc.i686 libXext.i686 libXrender.i686 libXtst.i686 libXi.i686 libusb.i686 
+    dnf install glibc.i686 libXext.i686 libXrender.i686 libXtst.i686 libXi.i686 libusb.i686
+elif [ -f /etc/SuSE-release ]; then
+    zypper update
+    zypper install glibc-32bit libXext6-32bit libXrender1-32bit libXtst6-32bit libXi6-32bit libusb-0_1-4-32bit 
 #elif ... other distributions
+else
+    dnf update
+    dnf install glibc.i686 libXext.i686 libXrender.i686 libXtst.i686 libXi.i686 libusb.i686
 fi
 
 
@@ -40,7 +46,8 @@ chmod u+x "/usr/share/applications/ORUSB.desktop"
 
 groupadd lego
 gpasswd -a ${SUDO_USER:-$USER} lego
+gpasswd -a ${SUDO_USER:-$USER} dialout
 udevadm control --reload-rules
 
-adduser ${SUDO_USER:-$USER} dialout
+#useradd ${SUDO_USER:-$USER} dialout
 exec su -l ${SUDO_USER:-$USER}
