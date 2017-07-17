@@ -22,31 +22,32 @@ public class NXTCommunicator {
     private static Logger log = Logger.getLogger("NXTCommunicator");
 
     private static final int MAX_BUFFER_SIZE = 58; // from lejos.nxt.remote.NXTCommand
-    private static final byte[] APROGRAMISRUNNING = {
-        (byte) -17,
-        (byte) -65,
-        (byte) -67,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0,
-        (byte) 0
-    };
+    private static final byte[] APROGRAMISRUNNING =
+        {
+            (byte) -17,
+            (byte) -65,
+            (byte) -67,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0,
+            (byte) 0
+        };
 
     private final NXTInfo nxt;
     private final int protocol;
@@ -149,9 +150,11 @@ public class NXTCommunicator {
     }
 
     public void uploadFile(byte[] binaryfile, String nxtFileName) throws IOException, NXTCommException {
-        if ( nxtFileName.length() > NXTCommand.MAX_FILENAMELENGTH ) {
-            nxtFileName = nxtFileName.substring(0, NXTCommand.MAX_FILENAMELENGTH - 1);
+        nxtFileName = nxtFileName.split("\\.")[0];
+        if ( nxtFileName.length() > NXTCommand.MAX_FILENAMELENGTH - 5 ) {
+            nxtFileName = nxtFileName.substring(0, NXTCommand.MAX_FILENAMELENGTH - 5);
         }
+        nxtFileName = nxtFileName + ".rxe";
         if ( getNXTstate() == NXTState.WAITING_FOR_PROGRAM ) {
             try {
                 connect();

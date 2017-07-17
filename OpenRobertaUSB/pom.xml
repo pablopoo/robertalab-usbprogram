@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fhg.iais.openroberta</groupId>
 	<artifactId>OpenRobertaUSB</artifactId>
-	<version>2.0.4-SNAPSHOT</version>
+	<version>2.0.5-SNAPSHOT</version>
 	<properties>
 		<!-- the server and the crosscompiler SHOULD be compatible between(including) the following two versions of software deployed on the ROBOT -->
 		<validversionrange.From>1.4.0</validversionrange.From>
@@ -92,6 +92,16 @@
 
 	</dependencies>
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<includes>
+					<include>**</include>
+				</includes>
+				
+				<filtering>true</filtering>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
