@@ -153,16 +153,14 @@
       </snapshots>
       <id>ORA-releases</id>
       <name>Open Roberta releases repository</name>
-      <url>http://ok-maven.iais.fraunhofer.de/artifactory/openroberta-snapshot-local</url>
+      <url>http://maven.iais.fraunhofer.de/artifactory/openroberta-release</url>
     </repository>
     <repository>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
+      <releases />
       <snapshots />
       <id>ORA-snapshots</id>
       <name>Open Roberta snapshot repository</name>
-      <url>http://ok-maven.iais.fraunhofer.de/artifactory/openroberta-snapshot-local</url>
+      <url>http://maven.iais.fraunhofer.de/artifactory/openroberta-snapshot-local</url>
     </repository>
   </repositories>
   <dependencies>
