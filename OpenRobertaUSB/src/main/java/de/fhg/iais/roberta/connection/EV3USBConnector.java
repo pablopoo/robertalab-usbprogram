@@ -38,12 +38,13 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
     private String token = "";
     private boolean userDisconnect = false;
 
-    private final String[] fwfiles = {
-        "runtime",
-        "jsonlib",
-        "websocketlib",
-        "ev3menu"
-    };
+    private final String[] fwfiles =
+        {
+            "runtime",
+            "jsonlib",
+            "websocketlib",
+            "ev3menu"
+        };
 
     /**
      * Instantiate the connector with specific properties from the file or use default options defined in this class.
@@ -222,10 +223,14 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
                         reset(null);
                     } else if ( responseCommandFromServer.equals(CMD_UPDATE) ) {
                         log.info("Execute firmware update");
-
+                        log.info(this.brickData.toString());
+                        String lejosVersion = "";
+                        if ( this.brickData.getString("firmwarename").equals("ev3lejosv1") ) {
+                            lejosVersion = "v1/";
+                        }
                         try {
                             for ( int i = 0; i < this.fwfiles.length; i++ ) {
-                                byte[] binaryfile = this.servcomm.downloadFirmwareFile(this.fwfiles[i]);
+                                byte[] binaryfile = this.servcomm.downloadFirmwareFile(lejosVersion + this.fwfiles[i]);
                                 this.ev3comm.uploadFirmwareFile(binaryfile, this.servcomm.getFilename());
                             }
                             this.ev3comm.restartBrick();
