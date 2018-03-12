@@ -178,15 +178,15 @@
     </dependency>
   </dependencies>
   <properties>
-    <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
-    <source.level>1.6</source.level>
-    <validversionrange.To>2.4.0</validversionrange.To>
-    <maven.compiler.target>1.6</maven.compiler.target>
     <buildTimeStamp>${maven.build.timestamp}</buildTimeStamp>
-    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.target>1.9</maven.compiler.target>
+    <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
+    <maven.compiler.source>1.9</maven.compiler.source>
     <validversionrange.From>1.4.0</validversionrange.From>
-    <maven.compiler.source>1.6</maven.compiler.source>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <validversionrange.To>2.4.0</validversionrange.To>
+    <source.level>1.9</source.level>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
   </properties>
 </project>
 

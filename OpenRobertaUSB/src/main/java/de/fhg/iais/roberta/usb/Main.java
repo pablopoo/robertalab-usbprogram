@@ -17,7 +17,6 @@ import org.apache.commons.lang3.SystemUtils;
 
 import de.fhg.iais.roberta.connection.ArduUSBConnector;
 import de.fhg.iais.roberta.connection.EV3USBConnector;
-import de.fhg.iais.roberta.connection.NXTUSBBTConnector;
 import de.fhg.iais.roberta.ui.ConnectionView;
 import de.fhg.iais.roberta.ui.UIController;
 import de.fhg.iais.roberta.util.ORAFormatter;
@@ -32,7 +31,6 @@ public class Main {
     private static File logFile = null;
 
     private static EV3USBConnector ev3usbcon = null;
-    private static NXTUSBBTConnector nxtusbbtcon = null;
     private static ArduUSBConnector arduusbcon = null;
 
     private static ConnectionView view = null;
@@ -51,7 +49,6 @@ public class Main {
                 ResourceBundle messages = getLocals();
                 ResourceBundle serverProps = getServerProps();
                 ev3usbcon = new EV3USBConnector(serverProps);
-                nxtusbbtcon = new NXTUSBBTConnector(serverProps);
                 arduusbcon = new ArduUSBConnector(serverProps);
                 view = new ConnectionView(messages);
                 controller = new UIController<Object>(view, messages);
@@ -97,13 +94,7 @@ public class Main {
         Thread t = null;
         while ( true ) {
             if ( startupFinish ) {
-                if ( nxtusbbtcon.findRobot() ) {
-                    log.info("NXT found!");
-                    controller.setConnector(nxtusbbtcon);
-                    t = new Thread(nxtusbbtcon);
-                    t.start();
-                    break;
-                } else if ( ev3usbcon.findRobot() ) {
+                if ( ev3usbcon.findRobot() ) {
                     log.info("EV found!");
                     controller.setConnector(ev3usbcon);
                     t = new Thread(ev3usbcon);
