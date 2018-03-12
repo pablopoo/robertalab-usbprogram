@@ -52,8 +52,7 @@ Property="UPGRADEFOUND" />
 			<Directory Id="TARGETDIR" Name="SourceDir">	
 			<Directory Id="ProgramFilesFolder">			
 				<Directory Id="INSTALLDIR" Name="OpenRoberta">
-					<Directory Id="RESOURCES" Name="resources"/>
-					<Directory Id="JAVA" Name="java"/>
+					<Directory Id="RESOURCES" Name="resources"/>				
 					<Directory Id="Drivers" Name="Drivers">
 						<Component Id="DPInst_x32" Guid="9BC0F448-32B2-4A21-8C46-76742266D829">
 							<File Id="DPInst.exe_x32" Name="DPInst.exe" Vital="yes" DiskId="1"  Source="DPInst\x32\DPInst.exe" />
@@ -105,10 +104,6 @@ Property="UPGRADEFOUND" />
 					<ComponentRef Id='DPInst_x64' />
 					<Condition Level="1">VersionNT64</Condition>
 				</Feature>				
-			</Feature>
-	
-			<Feature Id='Java' Title='Description' Description='java JDK' Level='1'>
-				<ComponentGroupRef Id='JavaGroupId' />
 			</Feature>
 			<Feature Id='Resources' Title='Description' Description='Libraries for the jar' Level='1'>
 				<ComponentGroupRef Id='ResGroupID' />

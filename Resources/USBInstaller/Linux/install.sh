@@ -33,7 +33,7 @@ fi
 echo "[Desktop Entry]" > "/usr/share/applications/ORUSB.desktop"
 echo "Version=2.0.4" >> "/usr/share/applications/ORUSB.desktop"
 echo "Name=Open Roberta USB" >> "/usr/share/applications/ORUSB.desktop"
-echo "Exec=$dir/java/bin/java -jar -Dfile.encoding=utf-8 $dir/OpenRobertaUSB.jar" >> "/usr/share/applications/ORUSB.desktop"
+echo "Exec=java -jar -Dfile.encoding=utf-8 $dir/OpenRobertaUSB.jar" >> "/usr/share/applications/ORUSB.desktop"
 echo "Path=$dir" >> "/usr/share/applications/ORUSB.desktop"
 echo "Icon=$dir/OR.png" >> "/usr/share/applications/ORUSB.desktop"
 echo "Terminal=false" >> "/usr/share/applications/ORUSB.desktop"
