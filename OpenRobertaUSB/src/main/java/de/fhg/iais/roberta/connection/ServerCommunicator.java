@@ -1,18 +1,22 @@
 package de.fhg.iais.roberta.connection;
 
+import java.io.BufferedInputStream;
 //import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-//import org.apache.commons.io.IOUtils;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+import javax.net.ssl.HttpsURLConnection;
+
+import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -29,9 +33,6 @@ public class ServerCommunicator {
     private String serverdownloadAddress;
     private String serverupdateAddress;
 
-    private final CloseableHttpClient httpclient;
-    private HttpPost post = null;
-
     private String filename = "";
 
     /**
@@ -39,7 +40,6 @@ public class ServerCommunicator {
      */
     public ServerCommunicator(String serverAddress) {
         updateCustomServerAddress(serverAddress);
-        this.httpclient = HttpClients.createDefault();
     }
 
     /**
@@ -69,44 +69,80 @@ public class ServerCommunicator {
      * @throws IOException if the server is unreachable for whatever reason.
      */
     public JSONObject pushRequest(JSONObject requestContent) throws IOException, JSONException {
-        this.post = new HttpPost("http://" + this.serverpushAddress);
-        this.post.setHeader("User-Agent", "Java/1.7.0_60");
-        StringEntity requestEntity = new StringEntity(requestContent.toString(), ContentType.create("application/json", "UTF-8"));
-        this.post.setEntity(requestEntity);
+        HashMap<String, String> requestProperties = new HashMap<>();
+        requestProperties.put("Accept", "application/json");
 
-        /*  URL url = new URL("https://" + this.serverpushAddress);
+        URLConnection conn = openURLConnection(this.serverpushAddress, "POST", requestProperties);
+        sendServerRequest(requestContent, conn);
+        String responseText = getServerResponse(conn);
+
+        return new JSONObject(responseText);
+    }
+
+    private URLConnection openURLConnection(String url, String requestMethod, Map<String, String> requestProperties)
+        throws MalformedURLException,
+        IOException,
+        ProtocolException {
+        URLConnection conn;
+        try {
+            conn = getHttpsConnection(url, requestMethod, requestProperties);
+            conn.connect();
+        } catch ( IOException ioException ) {
+            requestProperties.put("User-Agent", "Java/1.7.0_60");
+            conn = getHttpConnection(url, requestMethod, requestProperties);
+            conn.connect();
+        }
+        return conn;
+    }
+
+    private HttpURLConnection getHttpConnection(String urlAddress, String requestMethod, Map<String, String> requestProperties)
+        throws MalformedURLException,
+        IOException,
+        ProtocolException {
+        URL url = new URL("http://" + urlAddress);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+        setURLConnectionProperties(conn, "POST", requestProperties);
+        return conn;
+    }
+
+    private HttpsURLConnection getHttpsConnection(String urlAddress, String requestMethod, Map<String, String> requestProperties)
+        throws MalformedURLException,
+        IOException,
+        ProtocolException {
+        URL url = new URL("https://" + urlAddress);
         HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+        setURLConnectionProperties(conn, requestMethod, requestProperties);
+        return conn;
+    }
+
+    private void setURLConnectionProperties(HttpURLConnection conn, String requestMethod, Map<String, String> requestProperties) throws ProtocolException {
+        conn.setConnectTimeout(5000);
         conn.setDoOutput(true);
+        conn.setRequestMethod(requestMethod);
 
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Accept", "application/json");
+        for ( Map.Entry<String, String> property : requestProperties.entrySet() ) {
+            conn.setRequestProperty(property.getKey(), property.getValue());
+        }
         conn.setRequestProperty("Accept-Charset", "UTF-8");
+        conn.setRequestProperty("Content-Type", "application/json");
+    }
 
+    private String getServerResponse(URLConnection conn) throws IOException {
+        InputStream responseEntity = new BufferedInputStream(conn.getInputStream());
+        String responseText = "";
+        if ( responseEntity != null ) {
+            responseText = IOUtils.toString(responseEntity, "UTF-8");
+        }
+        responseEntity.close();
+        return responseText;
+    }
+
+    private void sendServerRequest(JSONObject requestContent, URLConnection conn) throws IOException, UnsupportedEncodingException {
         OutputStream os = conn.getOutputStream();
         os.write(requestContent.toString().getBytes("UTF-8"));
         os.flush();
         os.close();
-
-        if ( conn.getResponseCode() != HttpURLConnection.HTTP_OK ) {
-            throw new IOException("Failed : HTTP error code : " + conn.getResponseCode());
-        }
-
-        InputStream responseEntity = new BufferedInputStream(conn.getInputStream()); */
-
-        CloseableHttpResponse response = this.httpclient.execute(this.post);
-        HttpEntity responseEntity = response.getEntity();
-        String responseText = "";
-        if ( responseEntity != null ) {
-            responseText = EntityUtils.toString(responseEntity);
-            //           responseText = IOUtils.toString(responseEntity, "UTF-8");
-        }
-        response.close();
-
-        //      responseEntity.close();
-        //      conn.disconnect();
-
-        return new JSONObject(responseText);
     }
 
     /**
@@ -117,44 +153,13 @@ public class ServerCommunicator {
      * @throws IOException if the server is unreachable or something is wrong with the binary content.
      */
     public byte[] downloadProgram(JSONObject requestContent) throws IOException {
+        HashMap<String, String> requestProperties = new HashMap<>();
+        requestProperties.put("Accept", "application/octet-stream");
 
-        HttpPost post = new HttpPost("http://" + this.serverdownloadAddress);
-        post.setHeader("User-Agent", "Java/1.7.0_60");
-        StringEntity requestEntity = new StringEntity(requestContent.toString(), ContentType.create("application/json", "UTF-8"));
-        post.setEntity(requestEntity);
-        CloseableHttpResponse response = this.httpclient.execute(post);
-        HttpEntity responseEntity = response.getEntity();
+        URLConnection conn = openURLConnection(this.serverdownloadAddress, "POST", requestProperties);
+        sendServerRequest(requestContent, conn);
 
-        /*  URL url = new URL("https://" + this.serverdownloadAddress);
-        HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
-        conn.setDoOutput(true);
-
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Accept", "application/octet-stream");
-        conn.setRequestProperty("Accept-Charset", "UTF-8");
-        OutputStream os = conn.getOutputStream();
-        os.write(requestContent.toString().getBytes("UTF-8"));
-        os.flush();
-        os.close();
-
-        if ( conn.getResponseCode() != HttpURLConnection.HTTP_OK ) {
-            throw new IOException("Failed : HTTP error code : " + conn.getResponseCode());
-        }
-
-        InputStream responseEntity = new BufferedInputStream(conn.getInputStream()); */
-
-        byte[] binaryfile = null;
-        if ( responseEntity != null ) {
-
-            this.filename = response.getFirstHeader("Filename").getValue();
-            binaryfile = EntityUtils.toByteArray(responseEntity);
-            //  this.filename = conn.getHeaderField("Filename");
-            //  binaryfile = IOUtils.toByteArray(responseEntity);
-        }
-        response.close();
-        // responseEntity.close();
-        //conn.disconnect();
+        byte[] binaryfile = getBinaryFileFromResponse(conn);
 
         return binaryfile;
     }
@@ -168,59 +173,26 @@ public class ServerCommunicator {
      */
     public byte[] downloadFirmwareFile(String fwFile) throws IOException {
 
-        HttpGet get = new HttpGet("http://" + this.serverupdateAddress + "/" + fwFile);
-        get.setHeader("User-Agent", "Java/1.7.0_60");
-        CloseableHttpResponse response = this.httpclient.execute(get);
-        HttpEntity responseEntity = response.getEntity();
+        HashMap<String, String> requestProperties = new HashMap<>();
+        requestProperties.put("Accept", "application/octet-stream");
 
-        /*  URL url = new URL("https://" + this.serverupdateAddress + "/" + fwFile);
-        HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
+        URLConnection conn = openURLConnection(this.serverupdateAddress + "/" + fwFile, "GET", requestProperties);
 
-        conn.setDoInput(true);
-        conn.setRequestMethod("GET");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Accept", "application/octet-stream");
-        conn.setRequestProperty("Accept-Charset", "UTF-8");
-
-        if ( conn.getResponseCode() != HttpURLConnection.HTTP_OK ) {
-            throw new IOException("Failed : HTTP error code : " + conn.getResponseCode());
-        }
-
-        InputStream responseEntity = new BufferedInputStream(conn.getInputStream()); */
-
-        byte[] binaryfile = null;
-        if ( responseEntity != null ) {
-            this.filename = response.getFirstHeader("Filename").getValue();
-            binaryfile = EntityUtils.toByteArray(responseEntity);
-
-            //   this.filename = conn.getHeaderField("Filename");
-            //   binaryfile = IOUtils.toByteArray(responseEntity);
-        }
-        response.close();
-
-        //  responseEntity.close();
-        //  conn.disconnect();
+        byte[] binaryfile = getBinaryFileFromResponse(conn);
 
         return binaryfile;
     }
 
-    /**
-     * Cancel a pending push request (which is blocking in another thread), if the user wants to disconnect.
-     */
-    public void abort() {
-        if ( this.post != null ) {
-            this.post.abort();
+    private byte[] getBinaryFileFromResponse(URLConnection conn) throws IOException {
+        InputStream responseEntity = new BufferedInputStream(conn.getInputStream());
+
+        byte[] binaryfile = null;
+        if ( responseEntity != null ) {
+            this.filename = conn.getHeaderField("Filename");
+            binaryfile = IOUtils.toByteArray(responseEntity);
         }
+        responseEntity.close();
+        return binaryfile;
     }
 
-    /**
-     * Shut down the http client.
-     */
-    public void shutdown() {
-        try {
-            this.httpclient.close();
-        } catch ( IOException e ) {
-            // ok
-        }
-    }
 }

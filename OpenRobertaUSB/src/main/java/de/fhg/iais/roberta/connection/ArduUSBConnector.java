@@ -107,11 +107,13 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     private static String getEnvVar(String envVarName) throws Exception {
         String varName = "%" + envVarName + "%";
-        String envVarValue = execute(new String[] {
-            "cmd.exe",
-            "/C",
-            "echo " + varName
-        });
+        String envVarValue =
+            execute(
+                new String[] {
+                    "cmd.exe",
+                    "/C",
+                    "echo " + varName
+                });
         if ( envVarValue.equals(varName) ) {
             throw new Exception("Environment variable '" + envVarName + "' does not exist!");
         }
@@ -131,12 +133,14 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
         String tmpDirName = getEnvVar("TEMP").trim();
         String tmpFileName = tmpDirName + File.separator + "jwmi.vbs";
         writeStrToFile(tmpFileName, vbScript);
-        String output = execute(new String[] {
-            "cmd.exe",
-            "/C",
-            "cscript.exe",
-            tmpFileName
-        });
+        String output =
+            execute(
+                new String[] {
+                    "cmd.exe",
+                    "/C",
+                    "cscript.exe",
+                    tmpFileName
+                });
         new File(tmpFileName).delete();
 
         return output.trim();
@@ -343,13 +347,13 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
     public void userPressDisconnectButton() {
         log.info("DISCONNECTING by user");
         this.userDisconnect = true;
-        this.servcomm.abort();
+
     }
 
     @Override
     public void close() {
         userPressDisconnectButton();
-        this.servcomm.shutdown();
+
     }
 
     @Override

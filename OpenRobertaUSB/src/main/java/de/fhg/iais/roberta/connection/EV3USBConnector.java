@@ -317,7 +317,7 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
         } catch ( IOException e ) {
             // ok
         }
-        this.servcomm.abort();
+
         notifyConnectionStateChanged(State.DISCOVER);
         this.state = State.DISCOVER;
     }
@@ -346,7 +346,7 @@ public class EV3USBConnector extends Observable implements Runnable, Connector {
     @Override
     public void close() {
         userPressDisconnectButton();
-        this.servcomm.shutdown();
+
         this.ev3comm.shutdown();
     }
 }
