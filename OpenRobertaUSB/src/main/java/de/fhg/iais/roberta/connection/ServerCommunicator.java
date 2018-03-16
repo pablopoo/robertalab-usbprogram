@@ -88,7 +88,6 @@ public class ServerCommunicator {
             conn = getHttpsConnection(url, requestMethod, requestProperties);
             conn.connect();
         } catch ( IOException ioException ) {
-            requestProperties.put("User-Agent", "Java/1.7.0_60");
             conn = getHttpConnection(url, requestMethod, requestProperties);
             conn.connect();
         }
