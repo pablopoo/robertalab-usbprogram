@@ -48,7 +48,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
     public void getPortName() throws Exception {
         if ( SystemUtils.IS_OS_WINDOWS ) {
             String ArduQueryResult = getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
-            Matcher m = Pattern.compile("(Silicon Labs CP210x USB to UART Bridge \\()(.*)\\)").matcher(ArduQueryResult);
+            Matcher m = Pattern.compile("([Silicon Labs CP210x USB to UART Bridge | Arduino Uno | USB Serial Device] \\()(.*)\\)").matcher(ArduQueryResult);
             while ( m.find() ) {
                 this.portName = m.group(2);
             }
@@ -61,7 +61,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
             String line = "";
             while ( (line = reader.readLine()) != null ) {
-                Matcher m = Pattern.compile("(ttyUSB)").matcher(line);
+                Matcher m = Pattern.compile("(tty[USB|ACM])").matcher(line);
                 if ( m.find() ) {
                     this.portName = line;
                     //  System.out.print(this.portName + "\n");
@@ -181,7 +181,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
                         e1.printStackTrace();
                     }
 
-                    if ( (this.portName.length() > 0) ) {
+                    if ( this.portName.length() > 0 ) {
                         // TODO let user choose which one to connect?
                         this.arducomm = new ArduCommunicator(this.portName);
                         this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
@@ -330,7 +330,7 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
      * @param additionalerrormessage message for popup
      */
     private void reset(State additionalerrormessage, boolean playDisconnectSound) {
-        if ( (!this.userDisconnect) && (additionalerrormessage != null) ) {
+        if ( !this.userDisconnect && additionalerrormessage != null ) {
             notifyConnectionStateChanged(additionalerrormessage);
         }
         this.userDisconnect = false;
@@ -426,7 +426,8 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
 
     private boolean findArduWindows() {
         try {
-            return getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Silicon Labs");
+            String wmiValue = getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
+            return wmiValue.contains("Silicon Labs") || wmiValue.contains("Arduino") || wmiValue.contains("USB Serial Device"); //TODO
         } catch ( Exception e ) {
             // TODO Auto-generated catch block
             e.printStackTrace();
@@ -440,6 +441,8 @@ public class ArduUSBConnector extends Observable implements Runnable, Connector 
             String[] directories = file.list();
             for ( String directory : directories ) {
                 if ( directory.matches(".*Silicon_Labs_CP2104_USB_to_UART_Bridge_Controller.*") ) {
+                    return true;
+                } else if ( directory.contains("usb-Arduino") ) {
                     return true;
                 }
             }
