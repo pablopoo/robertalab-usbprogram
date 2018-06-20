@@ -1,84 +1,71 @@
 package de.fhg.iais.roberta.ui;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
 
-import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
 
 import de.fhg.iais.roberta.connection.IConnector;
-import de.fhg.iais.roberta.usb.Main;
+import de.fhg.iais.roberta.connection.IConnector.State;
 
-public class UIController<ObservableObject> implements Observer {
+import static de.fhg.iais.roberta.usb.USBProgram.closeProgram;
 
+public class UIController implements Observer {
+    private static final Logger LOG = Logger.getLogger("Connector");
+
+    private Map<String, IConnector> connectorMap = new HashMap<>();
     private IConnector connector;
     private final ConnectionView conView;
     private boolean connected;
     private final ResourceBundle rb;
-    private static Logger log = Logger.getLogger("Connector");
 
     public UIController(ConnectionView conView, ResourceBundle rb) {
         this.conView = conView;
         this.rb = rb;
         this.connected = false;
-        addListener();
+        this.conView.setCloseListener(new CloseListener());
         this.conView.setVisible(true);
+        this.conView.setConnectActionListener(new ORAActionListener(this));
+    }
+
+    public void setConnectorMap(List<IConnector> connectorList) {
+        for (IConnector conn : connectorList) {
+            this.connectorMap.put(conn.getBrickName(), conn);
+        }
+        this.conView.showRobotList(this.connectorMap);
+    }
+
+    public IConnector getSelectedRobot() {
+        return this.connectorMap.get(this.conView.getSelectedRobot());
+    }
+
+    public IConnector getConnector() {
+        return this.connector;
     }
 
     public void setConnector(IConnector usbCon) {
+        this.conView.hideRobotList();
         this.connector = usbCon;
         ((Observable) this.connector).addObserver(this);
-        log.config("GUI setup done. Using " + usbCon.getClass().getSimpleName());
+        LOG.config("GUI setup done. Using " + usbCon.getClass().getSimpleName());
     }
 
-    private void addListener() {
-        this.conView.setConnectActionListener(new ConnectActionListener());
-        this.conView.setCloseListener(new CloseListener());
+    public ResourceBundle getRb() {
+        return this.rb;
     }
 
-    public class ConnectActionListener implements ActionListener {
-
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            AbstractButton b = (AbstractButton) e.getSource();
-            if ( b.getActionCommand().equals("close") ) {
-                log.info("User close");
-                closeApplication();
-            } else if ( b.getActionCommand().equals("about") ) {
-                log.info("User about");
-                showAboutPopup();
-            } else if ( b.getActionCommand().equals("customaddress") ) {
-                log.info("User custom address");
-                showAdvancedOptions();
-            } else {
-                if ( b.isSelected() ) {
-                    log.info("User connect");
-                    if ( UIController.this.connector != null ) {
-                        checkForValidCustomServerAddressAndUpdate();
-                        UIController.this.connector.userPressConnectButton();
-                    }
-                    b.setText(UIController.this.rb.getString("disconnect"));
-                } else {
-                    log.info("User disconnect");
-                    if ( UIController.this.connector != null ) {
-                        UIController.this.connector.userPressDisconnectButton();
-                    }
-                    b.setText(UIController.this.rb.getString("connect"));
-                }
-            }
-        }
-    }
 
     public class CloseListener extends WindowAdapter {
         @Override
         public void windowClosing(WindowEvent e) {
-            log.info("User close");
+            LOG.info("User close");
             closeApplication();
         }
     }
@@ -91,12 +78,12 @@ public class UIController<ObservableObject> implements Observer {
         if ( this.conView.isCustomAddressSelected() ) {
             String ip = this.conView.getCustomIP();
             String port = this.conView.getCustomPort();
-            if ( ip != null && port != null && !ip.equals("") && !port.equals("") ) {
+            if ( (ip != null) && (port != null) && !ip.isEmpty() && !port.isEmpty() ) {
                 String address = ip + ":" + port;
-                log.info("Valid custom address " + address);
+                LOG.info("Valid custom address " + address);
                 this.connector.updateCustomServerAddress(address);
             } else {
-                log.info("Invalid custom address (null or empty) - Using default address");
+                LOG.info("Invalid custom address (null or empty) - Using default address");
                 this.connector.resetToDefaultServerAddress();
             }
         } else {
@@ -134,31 +121,29 @@ public class UIController<ObservableObject> implements Observer {
                         // ok
                     }
                 }
-                Main.stopFileLogger();
-                System.exit(0);
+                closeProgram();
             }
         } else {
-            Main.stopFileLogger();
-            System.exit(0);
+            closeProgram();
         }
     }
 
     @Override
-    public void update(Observable arg0, Object arg1) {
-        IConnector.State state = (IConnector.State) arg1;
+    public void update(Observable o, Object arg) {
+        State state = (State) arg;
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 //this.conView.setNew(this.connector.getBrickName());
                 this.conView.setWaitForConnect();
                 break;
             case WAIT_FOR_SERVER:
-                this.conView.setNew(this.rb.getString("token") + " " + this.connector.getToken());
+                this.conView.setNew(this.rb.getString("token") + ' ' + this.connector.getToken());
                 break;
             case RECONNECT:
-                this.conView.setConnectButtonText(UIController.this.rb.getString("disconnect"));
+                this.conView.setConnectButtonText(this.rb.getString("disconnect"));
             case WAIT_FOR_CMD:
                 this.connected = true;
-                this.conView.setNew(this.rb.getString("name") + " " + this.connector.getBrickName());
+                this.conView.setNew(this.rb.getString("name") + ' ' + this.connector.getBrickName());
                 this.conView.setWaitForCmd();
                 break;
             case DISCOVER:
@@ -185,12 +170,13 @@ public class UIController<ObservableObject> implements Observer {
                 break;
             case TOKEN_TIMEOUT:
                 ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("tokenTimeout"), null);
+                break;
             default:
                 break;
         }
     }
 
-    private void showAboutPopup() {
+    public void showAboutPopup() {
         ORAPopup.showPopup(
             this.conView,
             this.rb.getString("about"),

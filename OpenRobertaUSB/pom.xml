@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>de.fhg.iais.openroberta</groupId>
 	<artifactId>OpenRobertaUSB</artifactId>
-	<version>2.0.6-SNAPSHOT</version>
+	<version>2.7.2-SNAPSHOT</version>
 	<properties>
 		<!-- the server and the crosscompiler SHOULD be compatible between(including) the following two versions of software deployed on the ROBOT -->
 		<validversionrange.From>1.4.0</validversionrange.From>
@@ -113,7 +113,7 @@
 						<configuration>
 							<archive>
 								<manifest>
-									<mainClass>de.fhg.iais.roberta.usb.Main</mainClass>
+									<mainClass>de.fhg.iais.roberta.usb.USBProgramLauncher</mainClass>
 								</manifest>
 							</archive>
 						</configuration>
@@ -177,7 +177,7 @@
 						<configuration>
 							<transformers>
 								<transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-									<mainClass>de.fhg.iais.roberta.usb.Main</mainClass>
+									<mainClass>de.fhg.iais.roberta.usb.USBProgramLauncher</mainClass>
 								</transformer>
 							</transformers>
 						</configuration>
@@ -215,7 +215,7 @@
 								<windowTitle></windowTitle>
 							</singleInstance>
 							<classPath>
-								<mainClass>de.fhg.iais.roberta.usb.Main</mainClass>
+								<mainClass>de.fhg.iais.roberta.usb.USBProgramLauncher</mainClass>
 								<jarLocation>lib/*</jarLocation>
 								<jarLocation>resources/*</jarLocation>
 							</classPath>

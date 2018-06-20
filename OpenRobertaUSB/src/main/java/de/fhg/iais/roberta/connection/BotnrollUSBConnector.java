@@ -16,159 +16,14 @@ import org.json.JSONObject;
 import de.fhg.iais.roberta.util.JWMI;
 import de.fhg.iais.roberta.util.ORAtokenGenerator;
 
-public class BotnrollUSBConnector extends AbstractConnector {
-    private String portName;
-
-    private ArduinoCommunicator arducomm;
+public class BotnrollUSBConnector extends ArduinoUSBConnector {
 
     public BotnrollUSBConnector(ResourceBundle serverProps) {
         super(serverProps, "botnroll");
     }
 
     @Override
-    public boolean findRobot() {
-        if ( SystemUtils.IS_OS_LINUX ) {
-            return findArduinoLinux();
-        } else if ( SystemUtils.IS_OS_WINDOWS ) {
-            return findArduWindows();
-        } else if ( SystemUtils.IS_OS_MAC_OSX ) {
-            return findArduinoMac();
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public void run() {
-        LOG.config("Starting Arduino Connector Thread.");
-        setupServerCommunicator();
-        LOG.config("Server address " + this.serverAddress);
-        while ( true ) {
-            switch ( this.state ) {
-                case DISCOVER:
-                    try {
-                        getPortName();
-                    } catch ( Exception e1 ) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
-
-                    if ( this.portName.length() > 0 ) {
-                        // TODO let user choose which one to connect?
-                        this.arducomm = new ArduinoCommunicator(brickName);
-                        this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
-                        notifyConnectionStateChanged(this.state);
-                        break;
-                    } else {
-                        LOG.info("No Arduino device connected");
-                        try {
-                            Thread.sleep(1000);
-                        } catch ( InterruptedException e ) {
-                            // ok
-                        }
-                    }
-                    break;
-                case WAIT_EXECUTION:
-                    this.state = State.WAIT_EXECUTION;
-                    notifyConnectionStateChanged(this.state);
-
-                    this.state = State.WAIT_FOR_CMD;
-                    notifyConnectionStateChanged(this.state);
-
-                    try {
-                        Thread.sleep(1000);
-                    } catch ( InterruptedException ee ) {
-                        // ok
-                    }
-
-                    break;
-                case WAIT_FOR_CONNECT_BUTTON_PRESS:
-                    //                    // GUI initiates changing state to CONNECT
-                    try {
-                        Thread.sleep(1000);
-                    } catch ( InterruptedException e ) {
-                        // ok
-                    }
-                    break;
-                case CONNECT_BUTTON_IS_PRESSED:
-                    this.token = ORAtokenGenerator.generateToken();
-                    this.state = State.WAIT_FOR_SERVER;
-                    notifyConnectionStateChanged(this.state);
-                    this.brickData = this.arducomm.getDeviceInfo();
-                    this.brickData.put(KEY_TOKEN, this.token);
-                    this.brickData.put(KEY_CMD, CMD_REGISTER);
-                    try {
-                        JSONObject serverResponse = this.servcomm.pushRequest(this.brickData);
-                        String command = serverResponse.getString("cmd");
-                        switch ( command ) {
-                            case CMD_REPEAT:
-                                this.state = State.WAIT_FOR_CMD;
-                                notifyConnectionStateChanged(this.state);
-                                break;
-                            case CMD_ABORT:
-                                LOG.info("registration timeout");
-                                notifyConnectionStateChanged(State.TOKEN_TIMEOUT);
-                                this.state = State.DISCOVER;
-                                notifyConnectionStateChanged(this.state);
-                                break;
-                            default:
-                                throw new RuntimeException("Unexpected command " + command + "from server");
-                        }
-                    } catch ( IOException | RuntimeException io ) {
-                        LOG.info("CONNECT " + io.getMessage());
-                        reset(State.ERROR_HTTP);
-                    }
-
-                case WAIT_FOR_CMD:
-                    this.brickData = this.arducomm.getDeviceInfo();
-                    this.brickData.put(KEY_TOKEN, this.token);
-                    this.brickData.put(KEY_CMD, CMD_PUSH);
-                    try {
-                        String cmdKey = this.servcomm.pushRequest(this.brickData).getString(KEY_CMD);
-                        if ( cmdKey.equals(CMD_REPEAT) ) {
-                            break;
-                        } else if ( cmdKey.equals(CMD_DOWNLOAD) ) {
-                            LOG.info("Download user program");
-                            try {
-                                byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
-                                String filename = this.servcomm.getFilename();
-                                File temp = File.createTempFile(filename, "");
-
-                                temp.deleteOnExit();
-
-                                if ( !temp.exists() ) {
-                                    throw new FileNotFoundException("File " + temp.getAbsolutePath() + " does not exist.");
-                                }
-
-                                try (FileOutputStream os = new FileOutputStream(temp)) {
-                                    os.write(binaryfile);
-                                }
-
-                                this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
-                                this.state = State.WAIT_EXECUTION;
-                            } catch ( IOException | InterruptedException io ) {
-                                LOG.info("Download and run failed: " + io.getMessage());
-                                LOG.info("Do not give up yet - make the next push request");
-                                this.state = State.WAIT_FOR_CMD;
-                            }
-                        } else if ( cmdKey.equals(CMD_CONFIGURATION) ) {
-                            LOG.info("Configuration");
-                        } else if ( cmdKey.equals(CMD_UPDATE) ) {
-                            LOG.info("Firmware updated not necessary and not supported!");// log and go to abort
-                        } else if ( cmdKey.equals(CMD_ABORT) ) {
-                            throw new RuntimeException("Unexpected response from server");
-                        }
-                    } catch ( RuntimeException | IOException r ) {
-                        LOG.info("WAIT_FOR_CMD " + r.getMessage());
-                        reset(State.ERROR_HTTP);
-                    }
-                default:
-                    break;
-            }
-        }
-    }
-
-    private boolean findArduinoMac() {
+    protected boolean findArduinoMac() {
         try {
             File file = new File("/dev/");
             String[] directories = file.list();
@@ -183,7 +38,8 @@ public class BotnrollUSBConnector extends AbstractConnector {
         }
     }
 
-    private boolean findArduWindows() {
+    @Override
+    protected boolean findArduWindows() {
         try {
             return JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Silicon Labs");
         } catch ( Exception e ) {
@@ -193,7 +49,8 @@ public class BotnrollUSBConnector extends AbstractConnector {
         }
     }
 
-    private boolean findArduinoLinux() {
+    @Override
+    protected boolean findArduinoLinux() {
         try {
             File file = new File("/dev/serial/by-id/");
             String[] directories = file.list();
@@ -208,12 +65,13 @@ public class BotnrollUSBConnector extends AbstractConnector {
         }
     }
 
-    private void getPortName() throws Exception {
+    @Override
+    protected void getPortName() throws Exception {
         if ( SystemUtils.IS_OS_WINDOWS ) {
             String ArduQueryResult = JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
             Matcher m = Pattern.compile("(Silicon Labs CP210x USB to UART Bridge \\()(.*)\\)").matcher(ArduQueryResult);
             while ( m.find() ) {
-                this.portName = m.group(2);
+                portName = m.group(2);
             }
 
         } else if ( SystemUtils.IS_OS_LINUX ) {

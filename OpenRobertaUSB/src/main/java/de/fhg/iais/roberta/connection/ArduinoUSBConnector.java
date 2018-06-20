@@ -17,12 +17,16 @@ import de.fhg.iais.roberta.util.JWMI;
 import de.fhg.iais.roberta.util.ORAtokenGenerator;
 
 public class ArduinoUSBConnector extends AbstractConnector {
-    private String portName;
+    protected String portName;
 
     private ArduinoCommunicator arducomm;
 
     public ArduinoUSBConnector(ResourceBundle serverProps) {
         super(serverProps, "arduino");
+    }
+
+    protected ArduinoUSBConnector(ResourceBundle serverProps, String brickName) {
+        super(serverProps, brickName);
     }
 
     @Override
@@ -169,7 +173,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
         }
     }
 
-    private boolean findArduinoMac() {
+    protected boolean findArduinoMac() {
         try {
             File file = new File("/dev/");
             String[] directories = file.list();
@@ -184,7 +188,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
         }
     }
 
-    private boolean findArduWindows() {
+    protected boolean findArduWindows() {
         try {
             return JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Arduino");
         } catch ( Exception e ) {
@@ -194,7 +198,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
         }
     }
 
-    private boolean findArduinoLinux() {
+    protected boolean findArduinoLinux() {
         try {
             File file = new File("/dev/serial/by-id/");
             String[] directories = file.list();
@@ -209,7 +213,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
         }
     }
 
-    private void getPortName() throws Exception {
+    protected void getPortName() throws Exception {
         if ( SystemUtils.IS_OS_WINDOWS ) {
             String ArduQueryResult = JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
             Matcher m = Pattern.compile("(Arduino \\()(.*)\\)").matcher(ArduQueryResult);

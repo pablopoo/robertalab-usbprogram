@@ -16,10 +16,10 @@ import de.fhg.iais.roberta.util.ORAtokenGenerator;
  * The state will be changed from the gui in another thread.
  *
  * @author dpyka
- * @see {@link IConnector}
+ * {@link IConnector}
  */
 public class EV3USBConnector extends AbstractConnector {
-    private final String brickIp = "10.0.1.1";
+    private static final String brickIp = "10.0.1.1";
 
     private final EV3Communicator ev3comm;
 
@@ -35,14 +35,14 @@ public class EV3USBConnector extends AbstractConnector {
      * Instantiate the connector with specific properties from the file or use default options defined in this class.
      * Set up a communicator to the EV3 and to the Open Roberta server.
      *
-     * @param serverProps
+     * @param serverProps the server properties
      */
     public EV3USBConnector(ResourceBundle serverProps) {
         super(serverProps, "ev3");
 
-        LOG.config("Robot ip " + this.brickIp);
+        LOG.config("Robot ip " + brickIp);
 
-        this.ev3comm = new EV3Communicator(this.brickIp);
+        this.ev3comm = new EV3Communicator(brickIp);
     }
 
     @Override
@@ -82,9 +82,12 @@ public class EV3USBConnector extends AbstractConnector {
 
     @Override
     public String getBrickName() {
-        String brickname = this.brickData.getString("brickname");
-        if ( brickname != null ) {
-            this.brickName = brickname;
+        // TODO whats in brickData?
+        if ( this.brickData != null) {
+            String brickname = this.brickData.getString("brickname");
+            if ( brickname != null ) {
+                this.brickName = brickname;
+            }
         }
         return this.brickName;
     }
@@ -107,7 +110,7 @@ public class EV3USBConnector extends AbstractConnector {
                         } else if ( this.ev3comm.checkBrickState().equals("false") ) { // brick available and no program running
                             this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                         }
-                        Thread.sleep(1000);
+                        Thread.sleep(1000L);
                     } catch ( InterruptedException e ) {
                         LOG.info(State.DISCOVER + " " + e.getMessage());
                     } catch ( IOException e ) {
@@ -125,11 +128,11 @@ public class EV3USBConnector extends AbstractConnector {
                             //notifyConnectionStateChanged(this.state);
                         } else if ( this.ev3comm.checkBrickState().equals("false") ) {
                             // brick available and no program running
-                            LOG.info(State.WAIT_EXECUTION + "EV3 plugged in again, no program running, OK");
+                            LOG.info(State.WAIT_EXECUTION + " EV3 plugged in again, no program running, OK");
                             this.state = State.WAIT_FOR_CMD;
                             notifyConnectionStateChanged(this.state);
                         }
-                        Thread.sleep(1000);
+                        Thread.sleep(1000L);
                     } catch ( InterruptedException e ) {
                         LOG.info(State.WAIT_EXECUTION + " " + e.getMessage());
                     } catch ( IOException e ) {
@@ -144,10 +147,8 @@ public class EV3USBConnector extends AbstractConnector {
                         } else if ( this.ev3comm.checkBrickState().equals("false") ) {
                             // wait for user
                         }
-                        Thread.sleep(1000);
-                    } catch ( InterruptedException e ) {
-                        // ok
-                    } catch ( IOException e ) {
+                        Thread.sleep(1000L);
+                    } catch ( InterruptedException | IOException e ) {
                         // ok
                     }
                     break;
@@ -188,10 +189,7 @@ public class EV3USBConnector extends AbstractConnector {
                             LOG.info(State.CONNECT_BUTTON_IS_PRESSED + " Command " + command + " unknown");
                             reset(null);
                         }
-                    } catch ( IOException servererror ) {
-                        LOG.info(State.CONNECT_BUTTON_IS_PRESSED + " " + servererror.getMessage());
-                        reset(State.ERROR_HTTP);
-                    } catch ( JSONException servererror ) {
+                    } catch ( IOException | JSONException servererror ) {
                         LOG.info(State.CONNECT_BUTTON_IS_PRESSED + " " + servererror.getMessage());
                         reset(State.ERROR_HTTP);
                     }
@@ -206,15 +204,10 @@ public class EV3USBConnector extends AbstractConnector {
                         reset(State.ERROR_BRICK);
                         break;
                     }
-                    String responseCommandFromServer = "default";
+                    String responseCommandFromServer;
                     try {
                         responseCommandFromServer = this.servcomm.pushRequest(this.brickData).getString(KEY_CMD);
-                    } catch ( IOException servererror ) {
-                        // continue to default block
-                        LOG.info(State.WAIT_FOR_CMD + " Server response not ok " + servererror.getMessage());
-                        reset(State.ERROR_HTTP);
-                        break;
-                    } catch ( JSONException servererror ) {
+                    } catch ( IOException | JSONException servererror ) {
                         // continue to default block
                         LOG.info(State.WAIT_FOR_CMD + " Server response not ok " + servererror.getMessage());
                         reset(State.ERROR_HTTP);
@@ -226,7 +219,7 @@ public class EV3USBConnector extends AbstractConnector {
                         try {
                             this.ev3comm.disconnectBrick();
                         } catch ( IOException brickerror ) {
-                            LOG.info(State.WAIT_FOR_CMD + " Got" + CMD_ABORT + "and Brick disconnect failed " + brickerror.getMessage());
+                            LOG.info(State.WAIT_FOR_CMD + " Got " + CMD_ABORT + " and Brick disconnect failed " + brickerror.getMessage());
                         }
                         reset(null);
                     } else if ( responseCommandFromServer.equals(CMD_UPDATE) ) {
@@ -237,15 +230,15 @@ public class EV3USBConnector extends AbstractConnector {
                             lejosVersion = "v1/";
                         }
                         try {
-                            for ( int i = 0; i < this.fwfiles.length; i++ ) {
-                                byte[] binaryfile = this.servcomm.downloadFirmwareFile(lejosVersion + this.fwfiles[i]);
+                            for ( String fwfile : this.fwfiles ) {
+                                byte[] binaryfile = this.servcomm.downloadFirmwareFile(lejosVersion + fwfile);
                                 this.ev3comm.uploadFirmwareFile(binaryfile, this.servcomm.getFilename());
                             }
                             this.ev3comm.restartBrick();
                             LOG.info("Firmware update successful. Restarting EV3 now!");
                             reset(null);
                             try {
-                                Thread.sleep(3000);
+                                Thread.sleep(3000L);
                             } catch ( InterruptedException e ) {
                                 // ok;
                             }
@@ -274,6 +267,7 @@ public class EV3USBConnector extends AbstractConnector {
                         reset(null);
 
                     }
+                    break;
                 default:
                     break;
             }

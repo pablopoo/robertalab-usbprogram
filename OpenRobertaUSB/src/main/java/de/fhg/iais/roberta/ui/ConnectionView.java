@@ -6,8 +6,10 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Insets;
+import java.awt.event.ActionListener;
 import java.net.URL;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 
 import javax.swing.BorderFactory;
@@ -17,6 +19,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -24,45 +27,96 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
+import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.ui.UIController.CloseListener;
-import de.fhg.iais.roberta.ui.UIController.ConnectActionListener;
 
 public class ConnectionView extends JFrame {
 
     private static final long serialVersionUID = 1L;
     private static final int WIDTH = 310;
-    private static final int HEIGHT = 400;
-    private static final int ADVANCED_HEIGHT = 460;
+    private static final int HEIGHT = 500;
+    private static final int ADVANCED_HEIGHT = 558;
 
+    private static final Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
+
+    static {
+        try {
+            UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+        } catch ( ClassNotFoundException | IllegalAccessException | UnsupportedLookAndFeelException | InstantiationException e ) {
+            //            LOG.severe("Error when setting up the look and feel: " + e.getMessage());
+        }
+        UIManager.put("MenuBar.background", Color.white);
+        UIManager.put("Menu.background", Color.white);
+        UIManager.put("Menu.selectionBackground", Color.decode("#afca04"));
+        UIManager.put("Menu.foreground", Color.decode("#333333"));
+        UIManager.put("Menu.font", font.deriveFont(12.0f));
+        UIManager.put("MenuItem.background", Color.white);
+        UIManager.put("MenuItem.selectionBackground", Color.decode("#afca04"));
+        UIManager.put("MenuItem.foreground", Color.decode("#333333"));
+        UIManager.put("MenuItem.font", font.deriveFont(12.0f));
+        UIManager.put("MenuItem.focus", Color.decode("#afca04"));
+        UIManager.put("Panel.background", Color.white);
+        UIManager.put("CheckBox.background", Color.white);
+        UIManager.put("Separator.foreground", Color.decode("#dddddd"));
+        UIManager.put("TextField.background", Color.white);
+        UIManager.put("TextField.font", font);
+        UIManager.put("TextArea.font", font);
+        UIManager.put("Label.font", font);
+        UIManager.put("List.font", font);
+    }
+
+    // Menu
     private final JMenuBar menu = new JMenuBar();
-    private final JMenu mnFile = new JMenu();
-    private final JMenuItem mntClose = new JMenuItem();
-    private final JMenu mnInfo = new JMenu();
-    private final JMenuItem mntAbout = new JMenuItem();
+
+    private final JMenu menuFile = new JMenu();
+    private final JMenuItem menuItemClose = new JMenuItem();
+
+    private final JMenu menuInfo = new JMenu();
+    private final JMenuItem menuItemAbout = new JMenuItem();
+
     private final JLabel lblRobot = new JLabel();
-    private final JLabel lblMainGif = new JLabel();
-    private final ORAToggleButton butConnect = new ORAToggleButton();
-    private final ORAButton butClose = new ORAButton();
-    private final JTextArea txtInfo = new JTextArea();
-    private final JPanel pnlToken = new JPanel();
-    private final JTextField txtToken = new JTextField();
-    private final JCheckBox checkCustomAddress = new JCheckBox();
-    private final JLabel checkCustomDesc = new JLabel();
-    private final JTextField customheading = new JTextField();
-    private final JLabel customipDesc = new JLabel();
-    private final JTextField customip = new JTextField();
-    private final JLabel customportDesc = new JLabel();
-    private final JTextField customport = new JTextField();
-    private final JPanel pnlMainGif = new JPanel();
-    private final JPanel pnlButton = new JPanel();
-    private final JPanel pnlCustomInfo = new JPanel();
-    private final JPanel pnlCustomHeading = new JPanel();
-    private final JPanel pnlCustomAddress = new JPanel();
-    private final JPanel centerPanel = new JPanel();
+
+    // Center panel
+    private final JPanel pnlCenter = new JPanel();
+
     private final JSeparator sep = new JSeparator();
+
+    private final JList<String> listRobots = new JList<>();
+
+    private final JPanel pnlToken = new JPanel();
+    private final JTextField txtFldToken = new JTextField();
+
+    private final JPanel pnlMainGif = new JPanel();
+    private final JLabel lblMainGif = new JLabel();
+
+    private final JTextArea txtAreaInfo = new JTextArea();
+
+    private final JPanel pnlButton = new JPanel();
+    private final ORAToggleButton butConnect = new ORAToggleButton();
+    private final ORAButton butBack = new ORAButton();
+    private final ORAButton butClose = new ORAButton();
+
+    // Custom panel
+    private final JPanel pnlCustomInfo = new JPanel();
+    private final JCheckBox checkCustom = new JCheckBox();
+    private final JLabel lblCustom = new JLabel();
+
+    private final JPanel pnlCustomHeading = new JPanel();
+    private final JTextField txtFldCustomHeading = new JTextField();
+
+    private final JPanel pnlCustomAddress = new JPanel();
+    private final JLabel lblCustomIp = new JLabel();
+    private final JTextField txtFldCustomIp = new JTextField();
+    private final JLabel lblCustomPort = new JLabel();
+    private final JTextField txtFldCustomPort = new JTextField();
+
+    // Resources
     private final ResourceBundle messages;
+    private ImageIcon icoTitle;
     private ImageIcon icoRobotNotDiscovered;
     private ImageIcon icoRobotConnected;
     private ImageIcon icoRobotDiscovered;
@@ -70,6 +124,7 @@ public class ConnectionView extends JFrame {
     private ImageIcon gifConnect;
     private ImageIcon gifServer;
     private ImageIcon gifConnected;
+
 
     private boolean toggle = true;
 
@@ -80,167 +135,177 @@ public class ConnectionView extends JFrame {
         this.setDiscover();
     }
 
-    private void initGUI() {
+    private void initGeneralGUI() {
+        // General
         this.setSize(WIDTH, HEIGHT);
-        this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
         this.setResizable(false);
         this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         this.setLocationRelativeTo(null);
 
-        this.menu.setForeground(Color.decode("#333333"));
-        this.menu.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-        this.menu.setMaximumSize(this.menu.getPreferredSize());
-        this.mnFile.setText(this.messages.getString("file"));
-        this.mnInfo.setText(this.messages.getString("info"));
-        this.mntClose.setText(this.messages.getString("close"));
-        this.mntClose.setActionCommand("close");
-        this.mntAbout.setText(this.messages.getString("about"));
-        this.mntAbout.setActionCommand("about");
-
-        this.lblRobot.setIcon(this.icoRobotNotDiscovered);
-        this.lblMainGif.setPreferredSize(new Dimension(260, 140));
-
-        this.txtInfo.setLineWrap(true);
-        this.txtInfo.setMinimumSize(new Dimension(300, 0));
-        this.txtInfo.setWrapStyleWord(true);
-        this.txtInfo.setFont(new Font("Arial", Font.PLAIN, 14));
-        this.txtInfo.setForeground(Color.decode("#333333"));
-        this.txtInfo.setMargin(new Insets(8, 16, 8, 16));
-        this.txtInfo.setEditable(false);
-        this.txtInfo.setMaximumSize(new Dimension(WIDTH, 90));
-        this.txtInfo.setPreferredSize(new Dimension(WIDTH, 90));
-
-        this.pnlToken.setBorder(null);
-        this.pnlToken.setBackground(Color.white);
-        this.pnlToken.setLayout(new FlowLayout(FlowLayout.CENTER));
-        this.pnlToken.setPreferredSize(new Dimension(300, 30));
-        this.pnlToken.setMaximumSize(this.pnlToken.getPreferredSize());
-
-        this.txtToken.setFont(new Font("Arial", Font.PLAIN, 18));
-        this.txtToken.setEditable(false);
-        this.txtToken.setBackground(Color.white);
-        this.txtToken.setBorder(null);
-
-        this.checkCustomAddress.setBackground(Color.white);
-        this.checkCustomAddress.setActionCommand("customaddress");
-
-        this.checkCustomDesc.setFont(new Font("Arial", Font.PLAIN, 14));
-        this.checkCustomDesc.setBackground(Color.white);
-        this.checkCustomDesc.setBorder(null);
-
-        this.pnlButton.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
-        this.pnlButton.setBackground(Color.white);
-        this.pnlButton.setLayout(new FlowLayout(FlowLayout.LEFT));
-
-        this.pnlCustomInfo.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
-        this.pnlCustomInfo.setBackground(Color.white);
-        this.pnlCustomInfo.setLayout(new FlowLayout(FlowLayout.LEFT));
-
-        this.pnlCustomHeading.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
-        this.pnlCustomHeading.setBackground(Color.white);
-        this.pnlCustomHeading.setLayout(new FlowLayout(FlowLayout.LEFT));
-        this.pnlCustomHeading.setVisible(false);
-
-        this.pnlCustomAddress.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
-        this.pnlCustomAddress.setBackground(Color.white);
-        this.pnlCustomAddress.setLayout(new FlowLayout(FlowLayout.LEFT));
-        this.pnlCustomAddress.setVisible(false);
-
-        this.pnlMainGif.setBackground(Color.white);
-        this.pnlMainGif.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        this.pnlMainGif.setPreferredSize(new Dimension(300, 145));
-        this.pnlMainGif.add(this.lblMainGif);
-
-        this.centerPanel.setLayout(new BoxLayout(this.centerPanel, BoxLayout.Y_AXIS));
-        this.centerPanel.setAlignmentX(CENTER_ALIGNMENT);
-        this.centerPanel.setBackground(Color.white);
-        this.centerPanel.setPreferredSize(new Dimension(300, 450));
-        this.centerPanel.setMaximumSize(this.centerPanel.getPreferredSize());
-
-        this.butConnect.setEnabled(false);
-        this.butClose.setText(this.messages.getString("close"));
-        this.butClose.setActionCommand("close");
-
-        this.customheading.setFont(new Font("Arial", Font.PLAIN, 14));
-        this.customheading.setEditable(false);
-        this.customheading.setBackground(Color.white);
-        this.customheading.setBorder(null);
-        this.customheading.setText(this.messages.getString("customDesc"));
-
-        this.customipDesc.setFont(new Font("Arial", Font.PLAIN, 14));
-        this.customipDesc.setBackground(Color.white);
-        this.customipDesc.setBorder(null);
-
-        this.customip.setFont(new Font("Arial", Font.PLAIN, 14));
-        this.customip.setEditable(true);
-        this.customip.setColumns(10);
-
-        this.customportDesc.setFont(new Font("Arial", Font.PLAIN, 14));
-        this.customportDesc.setBackground(Color.white);
-        this.customportDesc.setBorder(null);
-
-        this.customport.setFont(new Font("Arial", Font.PLAIN, 14));
-        this.customport.setEditable(true);
-        this.customport.setColumns(4);
-
-        this.add(this.menu, BorderLayout.NORTH);
-        this.add(this.centerPanel, BorderLayout.CENTER);
-        this.sep.setForeground(Color.decode("#dddddd"));
-        this.centerPanel.add(this.sep);
-        this.centerPanel.setBorder(null);
-        this.centerPanel.add(this.pnlToken);
-        this.centerPanel.add(this.pnlMainGif);
-        this.centerPanel.add(this.txtInfo);
-        this.centerPanel.add(this.pnlButton);
-        this.centerPanel.add(this.pnlCustomInfo);
-        this.centerPanel.add(this.pnlCustomHeading);
-        this.centerPanel.add(this.pnlCustomAddress);
-        this.pnlButton.add(this.butConnect);
-        this.pnlButton.add(Box.createHorizontalStrut(12));
-        this.pnlButton.add(this.butClose);
-        this.pnlCustomInfo.add(this.checkCustomAddress);
-        this.pnlCustomInfo.add(this.checkCustomDesc);
-        this.checkCustomDesc.setText(this.messages.getString("checkCustomDesc"));
-        this.pnlCustomHeading.add(this.customheading);
-        this.pnlCustomAddress.add(this.customipDesc);
-        this.customipDesc.setText(this.messages.getString("ip"));
-        this.pnlCustomAddress.add(Box.createVerticalGlue());
-        this.pnlCustomAddress.add(this.customip);
-        this.pnlCustomAddress.add(Box.createHorizontalStrut(1));
-        this.pnlCustomAddress.add(this.customportDesc);
-        this.customportDesc.setText(this.messages.getString("port"));
-        this.pnlCustomAddress.add(this.customport);
-        this.pnlToken.add(this.txtToken);
-        this.menu.add(this.mnFile);
-        this.menu.add(this.mnInfo);
-        this.menu.add(Box.createHorizontalGlue());
-        this.menu.add(this.lblRobot);
-        this.mnFile.add(this.mntClose);
-        this.mnInfo.add(this.mntAbout);
-        this.setIconImage(new ImageIcon(getClass().getClassLoader().getResource("OR.png")).getImage());
-        this.txtInfo.setText(Locale.getDefault().getLanguage());
+        // Titlebar
+        this.setIconImage(this.icoTitle.getImage());
         this.setTitle(this.messages.getString("title"));
     }
 
-    @SuppressWarnings("rawtypes")
-    public void setConnectActionListener(ConnectActionListener connectListener) {
-        this.butConnect.addActionListener(connectListener);
-        this.mntClose.addActionListener(connectListener);
-        this.mntAbout.addActionListener(connectListener);
-        this.butClose.addActionListener(connectListener);
-        this.checkCustomAddress.addActionListener(connectListener);
+    private void initMenuGUI() {
+        // General
+        this.add(this.menu, BorderLayout.PAGE_START);
+        this.menu.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+
+        // File
+        this.menu.add(this.menuFile);
+        this.menuFile.setText(this.messages.getString("file"));
+        this.menuFile.add(this.menuItemClose);
+        this.menuItemClose.setText(this.messages.getString("close"));
+        this.menuItemClose.setActionCommand("close");
+
+        // Info
+        this.menu.add(this.menuInfo);
+        this.menuInfo.setText(this.messages.getString("info"));
+        this.menuInfo.add(this.menuItemAbout);
+        this.menuItemAbout.setText(this.messages.getString("about"));
+        this.menuItemAbout.setActionCommand("about");
+
+        this.menu.add(Box.createHorizontalGlue());
+
+        // Icon
+        this.menu.add(this.lblRobot);
+        this.lblRobot.setIcon(this.icoRobotNotDiscovered);
     }
 
-    @SuppressWarnings("rawtypes")
+    private void initCenterPanelGUI() {
+        // General
+        this.add(this.pnlCenter, BorderLayout.CENTER);
+        this.pnlCenter.setLayout(new BoxLayout(this.pnlCenter, BoxLayout.PAGE_AXIS));
+
+        // Seperator
+        this.pnlCenter.add(this.sep);
+
+        this.pnlCenter.add(Box.createRigidArea(new Dimension(0,25)));
+
+        // Robotlist
+        this.pnlCenter.add(this.listRobots);
+        this.listRobots.setVisible(false);
+
+        // Token panel
+        this.pnlCenter.add(this.pnlToken);
+
+        this.pnlToken.add(this.txtFldToken);
+        this.txtFldToken.setFont(font.deriveFont(18.0f));
+        this.txtFldToken.setBorder(BorderFactory.createEmptyBorder());
+        this.txtFldToken.setEditable(false);
+
+        // Main gif panel
+        this.pnlCenter.add(this.pnlMainGif);
+
+        this.pnlMainGif.add(this.lblMainGif);
+
+        this.pnlCenter.add(Box.createRigidArea(new Dimension(0,15)));
+
+        // Info texts
+        this.pnlCenter.add(this.txtAreaInfo);
+        this.txtAreaInfo.setText(Locale.getDefault().getLanguage());
+        this.txtAreaInfo.setLineWrap(true);
+        this.txtAreaInfo.setWrapStyleWord(true);
+        this.txtAreaInfo.setMargin(new Insets(8, 16, 8, 16));
+        this.txtAreaInfo.setEditable(false);
+
+        // Button panel
+        this.pnlCenter.add(this.pnlButton);
+        this.pnlButton.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        this.pnlButton.setLayout(new FlowLayout(FlowLayout.LEADING));
+
+        this.pnlButton.add(this.butConnect);
+        this.butConnect.setEnabled(false);
+
+        this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
+        this.pnlButton.add(this.butBack);
+        this.butBack.setText(this.messages.getString("back"));
+        this.butBack.setActionCommand("back");
+        this.butBack.setVisible(false);
+
+        this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
+        this.pnlButton.add(this.butClose);
+        this.butClose.setText(this.messages.getString("close"));
+        this.butClose.setActionCommand("close");
+
+        this.pnlCenter.add(Box.createRigidArea(new Dimension(0, 20)));
+    }
+
+    private void initCustomPanelGUI() {
+        // Custom info panel
+        this.pnlCenter.add(this.pnlCustomInfo);
+        this.pnlCustomInfo.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        this.pnlCustomInfo.setLayout(new FlowLayout(FlowLayout.LEADING));
+
+        this.pnlCustomInfo.add(this.checkCustom);
+        this.checkCustom.setActionCommand("customaddress");
+
+        this.pnlCustomInfo.add(this.lblCustom);
+        this.lblCustom.setBorder(null);
+        this.lblCustom.setText(this.messages.getString("checkCustomDesc"));
+
+        // Custom heading panel
+        this.pnlCenter.add(this.pnlCustomHeading);
+        this.pnlCustomHeading.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        this.pnlCustomHeading.setLayout(new FlowLayout(FlowLayout.LEADING));
+        this.pnlCustomHeading.setVisible(false);
+
+        this.pnlCustomHeading.add(this.txtFldCustomHeading);
+        this.txtFldCustomHeading.setEditable(false);
+        this.txtFldCustomHeading.setBorder(null);
+        this.txtFldCustomHeading.setText(this.messages.getString("customDesc"));
+
+        // Custom address panel
+        this.pnlCenter.add(this.pnlCustomAddress);
+        this.pnlCustomAddress.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
+        this.pnlCustomAddress.setLayout(new FlowLayout(FlowLayout.LEADING));
+        this.pnlCustomAddress.setVisible(false);
+
+        this.pnlCustomAddress.add(this.lblCustomIp);
+        this.lblCustomIp.setBorder(null);
+        this.lblCustomIp.setText(this.messages.getString("ip"));
+
+        this.pnlCustomAddress.add(Box.createVerticalGlue());
+        this.pnlCustomAddress.add(this.txtFldCustomIp);
+        this.txtFldCustomIp.setEditable(true);
+        this.txtFldCustomIp.setColumns(10);
+
+        this.pnlCustomAddress.add(this.lblCustomPort);
+        this.lblCustomPort.setBorder(null);
+        this.lblCustomPort.setText(this.messages.getString("port"));
+
+        this.pnlCustomAddress.add(this.txtFldCustomPort);
+        this.txtFldCustomPort.setEditable(true);
+        this.txtFldCustomPort.setColumns(4);
+
+        this.pnlCenter.add(Box.createRigidArea(new Dimension(0,15)));
+    }
+
+    private void initGUI() {
+        initGeneralGUI();
+        initMenuGUI();
+        initCenterPanelGUI();
+        initCustomPanelGUI();
+    }
+
+    public void setConnectActionListener(ActionListener connectListener) {
+        this.menuItemClose.addActionListener(connectListener);
+        this.menuItemAbout.addActionListener(connectListener);
+        this.butConnect.addActionListener(connectListener);
+        this.butBack.addActionListener(connectListener);
+        this.butClose.addActionListener(connectListener);
+        this.checkCustom.addActionListener(connectListener);
+    }
+
     public void setCloseListener(CloseListener closeListener) {
         this.addWindowListener(closeListener);
-
     }
 
     public void setWaitForConnect() {
         this.lblRobot.setIcon(this.icoRobotDiscovered);
         this.butConnect.setEnabled(true);
-        this.txtInfo.setText(this.messages.getString("connectInfo"));
+        this.txtAreaInfo.setText(this.messages.getString("connectInfo"));
         this.lblMainGif.setIcon(this.gifConnect);
     }
 
@@ -257,17 +322,17 @@ public class ConnectionView extends JFrame {
         this.butConnect.setEnabled(true);
         this.butConnect.setSelected(true);
         this.lblRobot.setIcon(this.icoRobotConnected);
-        this.txtInfo.setText(this.messages.getString("serverInfo"));
+        this.txtAreaInfo.setText(this.messages.getString("serverInfo"));
         this.lblMainGif.setIcon(this.gifConnected);
     }
 
     public void setDiscover() {
-        this.txtToken.setText("");
+        this.txtFldToken.setText("");
         this.lblRobot.setIcon(this.icoRobotNotDiscovered);
         this.butConnect.setText(this.messages.getString("connect"));
         this.butConnect.setSelected(false);
         this.butConnect.setEnabled(false);
-        this.txtInfo.setText(this.messages.getString("plugInInfo"));
+        this.txtAreaInfo.setText(this.messages.getString("plugInInfo"));
         this.lblMainGif.setIcon(this.gifPlug);
     }
 
@@ -277,26 +342,40 @@ public class ConnectionView extends JFrame {
     }
 
     public void setNew(String token) {
-        this.txtToken.setText(token);
-        this.txtInfo.setText(this.messages.getString("tokenInfo"));
+        this.txtFldToken.setText(token);
+        this.txtAreaInfo.setText(this.messages.getString("tokenInfo"));
         this.lblMainGif.setIcon(this.gifServer);
     }
 
+    public void showRobotList(Map<String, IConnector> connectorMap) {
+        this.listRobots.setVisible(true);
+        this.listRobots.setListData(connectorMap.keySet().toArray(new String[0]));
+    }
+
+    public void hideRobotList() {
+        this.listRobots.setVisible(false);
+//        this.butBack.setVisible(true);
+    }
+
+    public String getSelectedRobot() {
+        return this.listRobots.getSelectedValue();
+    }
+
     public void showAdvancedOptions() {
-        if ( this.checkCustomAddress.isSelected() ) {
+        if ( this.checkCustom.isSelected() ) {
             this.setSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
             this.setPreferredSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
             this.pnlCustomHeading.setVisible(true);
             this.pnlCustomAddress.setVisible(true);
-            this.centerPanel.revalidate();
-            //this.revalidate();
+//            this.pnlCenter.revalidate();
+            this.revalidate();
         } else {
             this.setSize(new Dimension(WIDTH, HEIGHT));
             this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
             this.pnlCustomHeading.setVisible(false);
             this.pnlCustomAddress.setVisible(false);
-            this.centerPanel.revalidate();
-            //this.revalidate();
+//            this.pnlCenter.revalidate();
+            this.revalidate();
         }
     }
 
@@ -305,19 +384,23 @@ public class ConnectionView extends JFrame {
     }
 
     public String getCustomIP() {
-        return this.customip.getText();
+        return this.txtFldCustomIp.getText();
     }
 
     public String getCustomPort() {
-        return this.customport.getText();
+        return this.txtFldCustomPort.getText();
     }
 
     public boolean isCustomAddressSelected() {
-        return this.checkCustomAddress.isSelected();
+        return this.checkCustom.isSelected();
     }
 
     private void createIcons() {
-        URL imgURL = getClass().getClassLoader().getResource("Roberta_Menu_Icon_green.png");
+        URL imgURL = getClass().getClassLoader().getResource("OR.png");
+        if ( imgURL != null ) {
+            this.icoTitle = new ImageIcon(imgURL);
+        }
+        imgURL = getClass().getClassLoader().getResource("Roberta_Menu_Icon_green.png");
         if ( imgURL != null ) {
             this.icoRobotConnected = new ImageIcon(imgURL);
         }
@@ -346,5 +429,4 @@ public class ConnectionView extends JFrame {
             this.gifConnected = new ImageIcon(imgURL);
         }
     }
-
 }
