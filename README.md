@@ -2,7 +2,6 @@
 Standalone program for connecting the robot hardware to Open Roberta lab using
 a usb connection.
 
-
 ### Fast installation with maven
 
 #### Clone the repository and compile
@@ -45,3 +44,7 @@ branch.
     git clone git://github.com/OpenRoberta/robertalab-usbprogram.git
     cd robertalab-usbprogram
     git checkout -b develop origin/develop
+
+### Third party libraries
+
+This implementation uses jWMI by [Henryranch LLC](http://henryranch.net/software/jwmi-query-windows-wmi-from-java/).

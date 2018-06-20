@@ -3,6 +3,8 @@ package de.fhg.iais.roberta.usb;
 import java.awt.Color;
 import java.awt.Font;
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.ConsoleHandler;
@@ -15,8 +17,10 @@ import javax.swing.UIManager;
 
 import org.apache.commons.lang3.SystemUtils;
 
-import de.fhg.iais.roberta.connection.ArduUSBConnector;
+import de.fhg.iais.roberta.connection.ArduinoUSBConnector;
+import de.fhg.iais.roberta.connection.BotnrollUSBConnector;
 import de.fhg.iais.roberta.connection.EV3USBConnector;
+import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.ui.ConnectionView;
 import de.fhg.iais.roberta.ui.UIController;
 import de.fhg.iais.roberta.util.ORAFormatter;
@@ -24,14 +28,13 @@ import de.fhg.iais.roberta.util.ORAFormatter;
 public class Main {
 
     private static final String LOGFILENAME = "OpenRobertaUSB.log";
-    private static Logger log = Logger.getLogger("Connector");
+    private static Logger LOG = Logger.getLogger("Connector");
     private static ConsoleHandler consoleHandler = new ConsoleHandler();
     private static FileHandler fileHandler = null;
 
     private static File logFile = null;
 
-    private static EV3USBConnector ev3usbcon = null;
-    private static ArduUSBConnector arduusbcon = null;
+    private static List<IConnector> connectorList = new ArrayList<>();
 
     private static ConnectionView view = null;
     private static UIController<?> controller = null;
@@ -48,8 +51,9 @@ public class Main {
                 prepareUI();
                 ResourceBundle messages = getLocals();
                 ResourceBundle serverProps = getServerProps();
-                ev3usbcon = new EV3USBConnector(serverProps);
-                arduusbcon = new ArduUSBConnector(serverProps);
+                connectorList.add(new EV3USBConnector(serverProps));
+                connectorList.add(new ArduinoUSBConnector(serverProps));
+                connectorList.add(new BotnrollUSBConnector(serverProps));
                 view = new ConnectionView(messages);
                 controller = new UIController<Object>(view, messages);
 
@@ -86,7 +90,7 @@ public class Main {
                 } catch ( Exception e ) {
                     rb = ResourceBundle.getBundle("messages", Locale.ENGLISH);
                 }
-                log.config("Language " + rb.getLocale());
+                LOG.config("Language " + rb.getLocale());
                 return rb;
             }
         });
@@ -94,18 +98,22 @@ public class Main {
         Thread t = null;
         while ( true ) {
             if ( startupFinish ) {
-                if ( ev3usbcon.findRobot() ) {
-                    log.info("EV found!");
-                    controller.setConnector(ev3usbcon);
-                    t = new Thread(ev3usbcon);
-                    t.start();
+                boolean robotFound = false;
+                for ( IConnector connector : connectorList ) {
+                    robotFound = connector.findRobot();
+
+                    if ( robotFound ) {
+                        LOG.info(connector.getBrickName() + " found!");
+                        controller.setConnector(connector);
+                        t = new Thread(connector);
+                        t.start();
+                        break; //break at first robot
+                    }
+                }
+                if ( robotFound ) {
                     break;
-                } else if ( arduusbcon.findRobot() ) {
-                    log.info("Arduino Found!");
-                    controller.setConnector(arduusbcon);
-                    t = new Thread(arduusbcon);
-                    t.start();
-                    break;
+                } else {
+                    LOG.info("No robot connected!");
                 }
             } else {
                 try {
@@ -151,10 +159,10 @@ public class Main {
         }
         consoleHandler.setFormatter(new ORAFormatter());
         consoleHandler.setLevel(Level.ALL);
-        log.setLevel(Level.ALL);
-        log.addHandler(consoleHandler);
-        log.addHandler(fileHandler);
-        log.setUseParentHandlers(false);
-        log.info("Logging to file: " + new File(logFile, LOGFILENAME).getPath().toString());
+        LOG.setLevel(Level.ALL);
+        LOG.addHandler(consoleHandler);
+        LOG.addHandler(fileHandler);
+        LOG.setUseParentHandlers(false);
+        LOG.info("Logging to file: " + new File(logFile, LOGFILENAME).getPath().toString());
     }
 }

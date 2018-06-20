@@ -10,22 +10,19 @@ import org.json.JSONObject;
 import de.fhg.iais.roberta.util.Utils;
 import jssc.SerialPort;
 
-public class ArduCommunicator {
+public class ArduinoCommunicator {
     private final Properties commProperties;
-    private final String portName;
     SerialPort serialPort;
     String connOptions;
-    String line;
     String osKey = "";
     String osKeyPath = "";
     String avrPath; //path for avrdude bin
     String avrConfPath; //path for the .conf file
-    //Boolean uploadInProgress;
+    String brickName;
 
-    public ArduCommunicator(String portName) {
-        this.portName = portName;
+    public ArduinoCommunicator(String brickName) {
         this.commProperties = Utils.loadProperties("classpath:OpenRobertaUSB.properties");
-        // this.connOptions = "";
+        this.brickName = brickName;
     }
 
     public void setParameters() {
@@ -52,14 +49,14 @@ public class ArduCommunicator {
 
     }
 
-    public JSONObject getDeviceInfo() throws IOException {
+    public JSONObject getDeviceInfo() {
         JSONObject deviceInfo = new JSONObject();
 
         deviceInfo.put("firmwarename", "Arduino");
         deviceInfo.put("robot", "ardu");
         deviceInfo.put("firmwareversion", "1.1.1");
         deviceInfo.put("macaddr", "0.121.99");
-        deviceInfo.put("brickname", "botnroll");
+        deviceInfo.put("brickname", brickName);
         deviceInfo.put("battery", "90.0");
         deviceInfo.put("menuversion", "1.4.0");
 
@@ -74,7 +71,6 @@ public class ArduCommunicator {
     /* public boolean isProgramRunning() throws IOException {
         return !Arrays.equals(APROGRAMISRUNNING, this.nxtCommand.getCurrentProgramName().getBytes());
     }*/
-
     public void uploadFile(String portName, String filePath) throws IOException, InterruptedException {
         setParameters();
         String portPath = "/dev/";
@@ -82,16 +78,16 @@ public class ArduCommunicator {
             portPath = "";
         }
         try {
-            ProcessBuilder procBuilder = new ProcessBuilder(new String[] {
-                this.avrPath,
-                "-v",
-                "-D",
-                "-pm328p",
-                "-carduino",
-                "-Uflash:w:" + filePath + ":i",
-                "-C" + this.avrConfPath,
-                "-P" + portPath + portName
-            });
+            ProcessBuilder
+                procBuilder =
+                new ProcessBuilder(this.avrPath,
+                    "-v",
+                    "-D",
+                    "-pm328p",
+                    "-carduino",
+                    "-Uflash:w:" + filePath + ":i",
+                    "-C" + this.avrConfPath,
+                    "-P" + portPath + portName);
 
             //            procBuilder.redirectInput(Redirect.INHERIT);
             //            procBuilder.redirectOutput(Redirect.INHERIT);

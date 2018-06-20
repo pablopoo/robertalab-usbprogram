@@ -51,7 +51,7 @@ public class EV3Communicator {
      */
     public JSONObject pushToBrick(String command) throws IOException {
         JSONObject request = new JSONObject();
-        request.put(Connector.KEY_CMD, command);
+        request.put(IConnector.KEY_CMD, command);
         HttpPost post = new HttpPost("http://" + this.brickinfo);
         StringEntity jsoncontent = new StringEntity(request.toString(), ContentType.create("application/json", "UTF-8"));
         post.setEntity(jsoncontent);
@@ -137,6 +137,6 @@ public class EV3Communicator {
      * @throws IOException should only occur if you disconnect the cable
      */
     public String checkBrickState() throws IOException {
-        return pushToBrick(Connector.CMD_ISRUNNING).getString("isrunning");
+        return pushToBrick(IConnector.CMD_ISRUNNING).getString("isrunning");
     }
 }

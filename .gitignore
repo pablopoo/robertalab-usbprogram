@@ -4,3 +4,10 @@
 */target
 *.msi
 *.wixobj
+**/.project
+**/.settings
+**/bin
+**/.classpath
+**/dependency-reduced-pom.xml
+**/*.iml
+.idea/

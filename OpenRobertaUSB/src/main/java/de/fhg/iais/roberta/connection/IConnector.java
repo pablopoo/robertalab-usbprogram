@@ -6,7 +6,7 @@ package de.fhg.iais.roberta.connection;
  *
  * @author dpyka
  */
-public interface Connector {
+public interface IConnector extends Runnable {
 
     public enum State {
         DISCOVER,
