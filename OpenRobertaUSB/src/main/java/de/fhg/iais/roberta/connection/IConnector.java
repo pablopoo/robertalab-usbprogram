@@ -1,14 +1,16 @@
 package de.fhg.iais.roberta.connection;
 
+import java.util.concurrent.Callable;
+
 /**
  * Defines a set of states, keywords and methods for handling the USB connection of a robot to the Open Roberta server. This interface is intended to be
  * implemented by all connector classes for different robot types.
  *
  * @author dpyka
  */
-public interface IConnector extends Runnable {
+public interface IConnector extends Callable<Boolean> {
 
-    public enum State {
+    enum State {
         DISCOVER,
         RECONNECT,
         WAIT_FOR_CONNECT_BUTTON_PRESS,
@@ -27,19 +29,19 @@ public interface IConnector extends Runnable {
         TOKEN_TIMEOUT
     }
 
-    static final String KEY_TOKEN = "token";
-    public static final String KEY_CMD = "cmd";
+    String KEY_TOKEN = "token";
+    String KEY_CMD = "cmd";
 
-    static final String CMD_REGISTER = "register";
-    static final String CMD_PUSH = "push";
-    static final String CMD_ISRUNNING = "isrunning";
+    String CMD_REGISTER = "register";
+    String CMD_PUSH = "push";
+    String CMD_ISRUNNING = "isrunning";
 
-    static final String CMD_REPEAT = "repeat";
-    static final String CMD_ABORT = "abort";
-    static final String CMD_UPDATE = "update";
-    static final String CMD_DOWNLOAD = "download";
-    static final String CMD_DOWNLOAD_RUN = "download_run";
-    static final String CMD_CONFIGURATION = "configuration";
+    String CMD_REPEAT = "repeat";
+    String CMD_ABORT = "abort";
+    String CMD_UPDATE = "update";
+    String CMD_DOWNLOAD = "download";
+    String CMD_DOWNLOAD_RUN = "download_run";
+    String CMD_CONFIGURATION = "configuration";
 
     /**
      * Search for a specific robot type for auto detection at the beginning of the program. The robot is considered to not run a user program at this time to be
@@ -47,58 +49,58 @@ public interface IConnector extends Runnable {
      *
      * @return true if a robot is connected, false otherwise
      */
-    public boolean findRobot();
+    boolean findRobot();
 
     /**
      * Tell the connector to collect necessary data from the robot and initialise a registration to Open Roberta.
      */
-    public void userPressConnectButton();
+    void userPressConnectButton();
 
     /**
      * Disconnect the current robot properly and search for robots again (start condition of the USB program).
      */
-    public void userPressDisconnectButton();
+    void userPressDisconnectButton();
 
     /**
      * Shut down the connector for closing the USB program.
      */
-    public void close();
+    void close();
 
     /**
      * Tell the gui, that the connector state has changed.
      *
-     * @param state
+     * @param state the state of the connector
      */
-    public void notifyConnectionStateChanged(State state);
+    void notifyConnectionStateChanged(State state);
 
     /**
      * Get the token to display in the gui.
      *
-     * @return
+     * @return the token
      */
-    public String getToken();
+    String getToken();
 
     /**
      * Get the robot name to display in the gui.
      *
      * @return robot name
      */
-    public String getBrickName();
+    String getBrickName();
 
     /**
      * In this state, the connector will download system libraries from the server, and upload it to the robot.
      */
-    public void update();
+    void update();
 
     /**
      * Update the server communicator's address to which it will connect.
      *
-     * @param customServerAddress
+     * @param customServerAddress the specified server address
      */
-    public void updateCustomServerAddress(String customServerAddress);
+    void updateCustomServerAddress(String customServerAddress);
 
     /**
      * If gui fields are empty but advanced options is checked, use the default server address.
      */
-    public void resetToDefaultServerAddress();
+    void resetToDefaultServerAddress();
 }

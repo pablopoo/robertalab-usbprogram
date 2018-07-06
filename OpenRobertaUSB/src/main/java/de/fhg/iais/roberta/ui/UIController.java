@@ -1,7 +1,5 @@
 package de.fhg.iais.roberta.ui;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,14 +26,17 @@ public class UIController implements Observer {
 
     public UIController(ConnectionView conView, ResourceBundle rb) {
         this.conView = conView;
+        this.conView.setVisible(true);
         this.rb = rb;
         this.connected = false;
-        this.conView.setCloseListener(new CloseListener());
-        this.conView.setVisible(true);
-        this.conView.setConnectActionListener(new ORAActionListener(this));
+
+        ORAActionListener listener = new ORAActionListener(this);
+        this.conView.setWindowListener(listener);
+        this.conView.setConnectActionListener(listener);
     }
 
     public void setConnectorMap(List<IConnector> connectorList) {
+        LOG.info("setConnectorMap");
         for (IConnector conn : connectorList) {
             this.connectorMap.put(conn.getBrickName(), conn);
         }
@@ -43,6 +44,7 @@ public class UIController implements Observer {
     }
 
     public IConnector getSelectedRobot() {
+//        LOG.info("getSelectedRobot");
         return this.connectorMap.get(this.conView.getSelectedRobot());
     }
 
@@ -51,10 +53,17 @@ public class UIController implements Observer {
     }
 
     public void setConnector(IConnector usbCon) {
+        LOG.info("setConnector");
         this.conView.hideRobotList();
         this.connector = usbCon;
         ((Observable) this.connector).addObserver(this);
         LOG.config("GUI setup done. Using " + usbCon.getClass().getSimpleName());
+    }
+
+    public void setDiscover() {
+        LOG.info("setDiscover");
+        this.connected = false;
+        this.conView.setDiscover();
     }
 
     public ResourceBundle getRb() {
@@ -62,19 +71,13 @@ public class UIController implements Observer {
     }
 
 
-    public class CloseListener extends WindowAdapter {
-        @Override
-        public void windowClosing(WindowEvent e) {
-            LOG.info("User close");
-            closeApplication();
-        }
-    }
-
     public void showAdvancedOptions() {
+        LOG.info("showAdvancedOptions");
         this.conView.showAdvancedOptions();
     }
 
     public void checkForValidCustomServerAddressAndUpdate() {
+        LOG.info("checkForValidCustomServerAddressAndUpdate");
         if ( this.conView.isCustomAddressSelected() ) {
             String ip = this.conView.getCustomIP();
             String port = this.conView.getCustomPort();
@@ -100,6 +103,7 @@ public class UIController implements Observer {
     }
 
     public void closeApplication() {
+        LOG.info("closeApplication");
         if ( this.connected ) {
             String[] buttons = {
                 this.rb.getString("close"),
@@ -131,9 +135,11 @@ public class UIController implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         State state = (State) arg;
+        LOG.info("update " + state);
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 //this.conView.setNew(this.connector.getBrickName());
+                this.connected = false;
                 this.conView.setWaitForConnect();
                 break;
             case WAIT_FOR_SERVER:
@@ -177,6 +183,7 @@ public class UIController implements Observer {
     }
 
     public void showAboutPopup() {
+        LOG.info("showAboutPopup");
         ORAPopup.showPopup(
             this.conView,
             this.rb.getString("about"),

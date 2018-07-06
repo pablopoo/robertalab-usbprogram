@@ -13,11 +13,14 @@ import javax.swing.SwingUtilities;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
@@ -30,18 +33,21 @@ public class USBProgram {
     private static FileHandler fileHandler = null;
     private static File logFile = null;
 
-    private final List<IConnector> connectorList;
+    static {
+        ResourceBundle serverProps = ResourceBundle.getBundle("OpenRobertaUSB");
+        connectorList = Arrays.<IConnector>asList(
+            new EV3USBConnector(serverProps),
+            new ArduinoUSBConnector(serverProps),
+            new BotnrollUSBConnector(serverProps));
+    }
+
+    private static final List<IConnector> connectorList;
+    private static boolean connectorShouldStop = false;
     private ConnectionView view = null;
     private UIController controller = null;
 
     public USBProgram() {
         configureLogger();
-
-        ResourceBundle serverProps = ResourceBundle.getBundle("OpenRobertaUSB");
-        this.connectorList = Arrays.<IConnector>asList(
-            new EV3USBConnector(serverProps),
-            new ArduinoUSBConnector(serverProps),
-            new BotnrollUSBConnector(serverProps));
 
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
@@ -52,14 +58,42 @@ public class USBProgram {
                     USBProgram.this.controller = new UIController(USBProgram.this.view, messages);
                 }
             });
-        } catch ( InterruptedException e ) {
-            LOG.severe("UI could not be set up");
-            Thread.currentThread().interrupt();
-            closeProgram();
-        } catch ( InvocationTargetException e ) {
+        } catch ( InterruptedException | InvocationTargetException e ) {
             LOG.severe("UI could not be set up");
             closeProgram();
         }
+    }
+
+    public void run() {
+        LOG.info("Entering run method!");
+        ExecutorService executorService = Executors.newSingleThreadExecutor();
+        while(!Thread.currentThread().isInterrupted()) {
+            Future<IConnector> robotSearchFuture = executorService.submit(new RobotSearchTask(connectorList, this.controller));
+
+            try {
+                IConnector selectedRobot = robotSearchFuture.get();
+                this.controller.setConnector(selectedRobot);
+
+                Future<Boolean> connectorFuture = executorService.submit(selectedRobot);
+
+                while(!connectorFuture.isDone()) {
+                    if(connectorShouldStop) {
+                        connectorFuture.cancel(true);
+                    }
+                    Thread.sleep(2000);
+                }
+                connectorShouldStop = false;
+                LOG.info("Connector finished!");
+            } catch ( InterruptedException | ExecutionException e ) {
+                LOG.severe("Something went wrong: " + e.getMessage());
+                Thread.currentThread().interrupt();
+            }
+        }
+        executorService.shutdown();
+    }
+
+    public static void stopConnector() {
+        connectorShouldStop = true;
     }
 
     private static ResourceBundle getLocale() {
@@ -69,63 +103,9 @@ public class USBProgram {
         } catch ( RuntimeException e ) {
             rb = ResourceBundle.getBundle("messages", Locale.ENGLISH);
         }
-//        rb = ResourceBundle.getBundle("messages", Locale.GERMAN);
 
         LOG.config("Language " + rb.getLocale());
         return rb;
-    }
-
-    private boolean updateFoundRobots(List<IConnector> foundRobots) {
-        boolean updated = false;
-        for ( IConnector connector : this.connectorList ) {
-            if (connector.findRobot()) {
-                if (!foundRobots.contains(connector)) {
-                    foundRobots.add(connector);
-                    updated = true;
-                }
-            } else {
-                if (foundRobots.contains(connector)) {
-                    foundRobots.remove(connector);
-                    updated = true;
-                }
-            }
-        }
-        return updated;
-    }
-
-    public void run() {
-        List<IConnector> foundRobots = new ArrayList<>();
-
-        while ( true ) {
-            boolean wasListUpdated = updateFoundRobots(foundRobots);
-
-            if ( foundRobots.isEmpty() ) {
-                LOG.info("No robot connected!");
-            } else if (foundRobots.size() == 1) {
-                LOG.info("Only " + foundRobots.get(0).getBrickName() + " available.");
-                this.controller.setConnector(foundRobots.get(0));
-                Thread t = new Thread(foundRobots.get(0));
-                t.start();
-                break;
-            } else {
-                for (IConnector robot : foundRobots) {
-                    LOG.info(robot.getBrickName() + " available.");
-                }
-                if (wasListUpdated) {
-                    LOG.info("list was updated!");
-                    this.controller.setConnectorMap(foundRobots);
-                }
-
-                IConnector selectedRobot = this.controller.getSelectedRobot();
-                if (selectedRobot != null) {
-                    LOG.info(selectedRobot.toString());
-                    this.controller.setConnector(selectedRobot);
-                    Thread t = new Thread(selectedRobot);
-                    t.start();
-                    break;
-                }
-            }
-        }
     }
 
     /**

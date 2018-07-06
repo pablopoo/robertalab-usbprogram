@@ -2,11 +2,13 @@ package de.fhg.iais.roberta.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowListener;
 import java.net.URL;
 import java.util.Locale;
 import java.util.Map;
@@ -32,7 +34,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 
 import de.fhg.iais.roberta.connection.IConnector;
-import de.fhg.iais.roberta.ui.UIController.CloseListener;
 
 public class ConnectionView extends JFrame {
 
@@ -85,6 +86,7 @@ public class ConnectionView extends JFrame {
 
     private final JSeparator sep = new JSeparator();
 
+    private final JLabel lblSelection = new JLabel();
     private final JList<String> listRobots = new JList<>();
 
     private final JPanel pnlToken = new JPanel();
@@ -97,7 +99,7 @@ public class ConnectionView extends JFrame {
 
     private final JPanel pnlButton = new JPanel();
     private final ORAToggleButton butConnect = new ORAToggleButton();
-    private final ORAButton butBack = new ORAButton();
+    private final ORAToggleButton butBack = new ORAToggleButton();
     private final ORAButton butClose = new ORAButton();
 
     // Custom panel
@@ -130,8 +132,9 @@ public class ConnectionView extends JFrame {
 
     public ConnectionView(ResourceBundle messages) {
         this.messages = messages;
-        createIcons();
-        initGUI();
+
+        this.createIcons();
+        this.initGUI();
         this.setDiscover();
     }
 
@@ -180,12 +183,18 @@ public class ConnectionView extends JFrame {
 
         // Seperator
         this.pnlCenter.add(this.sep);
-
         this.pnlCenter.add(Box.createRigidArea(new Dimension(0,25)));
 
         // Robotlist
+        this.pnlCenter.add(this.lblSelection);
+        this.lblSelection.setText(this.messages.getString("listInfo"));
+        this.lblSelection.setAlignmentX(Component.RIGHT_ALIGNMENT);
+        this.lblSelection.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
+        this.lblSelection.setBorder(BorderFactory.createEmptyBorder(0, 12, 10, 12));
+
         this.pnlCenter.add(this.listRobots);
-        this.listRobots.setVisible(false);
+        this.listRobots.setMaximumSize(new Dimension(Short.MAX_VALUE, Short.MAX_VALUE));
+        this.listRobots.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
 
         // Token panel
         this.pnlCenter.add(this.pnlToken);
@@ -216,13 +225,11 @@ public class ConnectionView extends JFrame {
         this.pnlButton.setLayout(new FlowLayout(FlowLayout.LEADING));
 
         this.pnlButton.add(this.butConnect);
-        this.butConnect.setEnabled(false);
 
         this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
         this.pnlButton.add(this.butBack);
         this.butBack.setText(this.messages.getString("back"));
         this.butBack.setActionCommand("back");
-        this.butBack.setVisible(false);
 
         this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
         this.pnlButton.add(this.butClose);
@@ -249,7 +256,6 @@ public class ConnectionView extends JFrame {
         this.pnlCenter.add(this.pnlCustomHeading);
         this.pnlCustomHeading.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
         this.pnlCustomHeading.setLayout(new FlowLayout(FlowLayout.LEADING));
-        this.pnlCustomHeading.setVisible(false);
 
         this.pnlCustomHeading.add(this.txtFldCustomHeading);
         this.txtFldCustomHeading.setEditable(false);
@@ -260,7 +266,6 @@ public class ConnectionView extends JFrame {
         this.pnlCenter.add(this.pnlCustomAddress);
         this.pnlCustomAddress.setBorder(BorderFactory.createEmptyBorder(0, 12, 0, 12));
         this.pnlCustomAddress.setLayout(new FlowLayout(FlowLayout.LEADING));
-        this.pnlCustomAddress.setVisible(false);
 
         this.pnlCustomAddress.add(this.lblCustomIp);
         this.lblCustomIp.setBorder(null);
@@ -283,10 +288,23 @@ public class ConnectionView extends JFrame {
     }
 
     private void initGUI() {
-        initGeneralGUI();
-        initMenuGUI();
-        initCenterPanelGUI();
-        initCustomPanelGUI();
+        this.initGeneralGUI();
+        this.initMenuGUI();
+        this.initCenterPanelGUI();
+        this.initCustomPanelGUI();
+
+        this.hideRobotList();
+        this.hideCustom();
+    }
+
+    private void hideCustom() {
+        this.pnlCustomHeading.setVisible(false);
+        this.pnlCustomAddress.setVisible(false);
+    }
+
+    private void showCustom() {
+        this.pnlCustomHeading.setVisible(true);
+        this.pnlCustomAddress.setVisible(true);
     }
 
     public void setConnectActionListener(ActionListener connectListener) {
@@ -298,13 +316,14 @@ public class ConnectionView extends JFrame {
         this.checkCustom.addActionListener(connectListener);
     }
 
-    public void setCloseListener(CloseListener closeListener) {
-        this.addWindowListener(closeListener);
+    public void setWindowListener(WindowListener windowListener) {
+        this.addWindowListener(windowListener);
     }
 
     public void setWaitForConnect() {
         this.lblRobot.setIcon(this.icoRobotDiscovered);
         this.butConnect.setEnabled(true);
+        this.butBack.setEnabled(true);
         this.txtAreaInfo.setText(this.messages.getString("connectInfo"));
         this.lblMainGif.setIcon(this.gifConnect);
     }
@@ -332,6 +351,8 @@ public class ConnectionView extends JFrame {
         this.butConnect.setText(this.messages.getString("connect"));
         this.butConnect.setSelected(false);
         this.butConnect.setEnabled(false);
+        this.butBack.setEnabled(false);
+        this.butBack.setSelected(false);
         this.txtAreaInfo.setText(this.messages.getString("plugInInfo"));
         this.lblMainGif.setIcon(this.gifPlug);
     }
@@ -342,19 +363,21 @@ public class ConnectionView extends JFrame {
     }
 
     public void setNew(String token) {
+        this.butBack.setEnabled(false);
         this.txtFldToken.setText(token);
         this.txtAreaInfo.setText(this.messages.getString("tokenInfo"));
         this.lblMainGif.setIcon(this.gifServer);
     }
 
     public void showRobotList(Map<String, IConnector> connectorMap) {
+        this.lblSelection.setVisible(true);
         this.listRobots.setVisible(true);
         this.listRobots.setListData(connectorMap.keySet().toArray(new String[0]));
     }
 
     public void hideRobotList() {
+        this.lblSelection.setVisible(false);
         this.listRobots.setVisible(false);
-//        this.butBack.setVisible(true);
     }
 
     public String getSelectedRobot() {
@@ -365,16 +388,12 @@ public class ConnectionView extends JFrame {
         if ( this.checkCustom.isSelected() ) {
             this.setSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
             this.setPreferredSize(new Dimension(WIDTH, ADVANCED_HEIGHT));
-            this.pnlCustomHeading.setVisible(true);
-            this.pnlCustomAddress.setVisible(true);
-//            this.pnlCenter.revalidate();
+            this.showCustom();
             this.revalidate();
         } else {
             this.setSize(new Dimension(WIDTH, HEIGHT));
             this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
-            this.pnlCustomHeading.setVisible(false);
-            this.pnlCustomAddress.setVisible(false);
-//            this.pnlCenter.revalidate();
+            this.hideCustom();
             this.revalidate();
         }
     }
