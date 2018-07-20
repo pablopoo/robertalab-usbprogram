@@ -49,7 +49,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 try {
                     getPortName();
                 } catch ( Exception e ) {
-                    LOG.severe("Something went wrong when trying to get the port name: " + e.getMessage());
+                    LOG.error("Something went wrong when trying to get the port name: {}", e.getMessage());
                 }
 
                 if ( this.portName.isEmpty() ) {
@@ -100,7 +100,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                             throw new RuntimeException("Unexpected command " + command + "from server");
                     }
                 } catch ( IOException | RuntimeException io ) {
-                    LOG.info("CONNECT " + io.getMessage());
+                    LOG.info("CONNECT {}", io.getMessage());
                     reset(State.ERROR_HTTP);
                 }
 
@@ -132,7 +132,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                             this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
                             this.state = State.WAIT_EXECUTION;
                         } catch ( IOException io ) {
-                            LOG.info("Download and run failed: " + io.getMessage());
+                            LOG.info("Download and run failed: {}", io.getMessage());
                             LOG.info("Do not give up yet - make the next push request");
                             this.state = State.WAIT_FOR_CMD;
 
@@ -145,7 +145,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                         throw new RuntimeException("Unexpected response from server");
                     }
                 } catch ( RuntimeException | IOException r ) {
-                    LOG.info("WAIT_FOR_CMD " + r.getMessage());
+                    LOG.info("WAIT_FOR_CMD {}", r.getMessage());
                     reset(State.ERROR_HTTP);
                 }
             default:
@@ -172,7 +172,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
         try {
             return JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Arduino");
         } catch ( Exception e ) {
-            LOG.severe("Something went wrong when finding Arduinos: " + e.getMessage());
+            LOG.error("Something went wrong when finding Arduinos: {}", e.getMessage());
             return false;
         }
     }

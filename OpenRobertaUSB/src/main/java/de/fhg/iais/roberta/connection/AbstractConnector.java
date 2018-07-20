@@ -2,12 +2,13 @@ package de.fhg.iais.roberta.connection;
 
 import java.util.Observable;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractConnector extends Observable implements IConnector {
-    protected static final Logger LOG = Logger.getLogger("Connector");
+    protected static final Logger LOG = LoggerFactory.getLogger(AbstractConnector.class);
 
     protected String serverIp = "localhost";
     protected String serverPort = "1999";
@@ -33,16 +34,16 @@ public abstract class AbstractConnector extends Observable implements IConnector
 
     @Override
     public Boolean call() {
-        LOG.config("Starting " + this.brickName + " connector thread.");
+        LOG.info("Starting {} connector thread.", this.brickName);
         setupServerCommunicator();
-        LOG.config("Server address " + this.serverAddress);
+        LOG.info("Server address {}", this.serverAddress);
         while(!Thread.currentThread().isInterrupted()) {
             try {
-                LOG.info(Thread.currentThread().getName() + " is running! ");
+                LOG.debug("{} is running! ", Thread.currentThread().getName());
                 runLoopBody();
             } catch (InterruptedException e) {
                 reset(null);
-                LOG.info("Stopping " + this.brickName + " connector thread.");
+                LOG.info("Stopping {} connector thread.", this.brickName);
                 Thread.currentThread().interrupt();
             }
         }
@@ -93,13 +94,13 @@ public abstract class AbstractConnector extends Observable implements IConnector
     @Override
     public void updateCustomServerAddress(String customServerAddress) {
         this.servcomm.updateCustomServerAddress(customServerAddress);
-        LOG.info("Now using custom address " + customServerAddress);
+        LOG.info("Now using custom address {}", customServerAddress);
     }
 
     @Override
     public void resetToDefaultServerAddress() {
         this.servcomm.updateCustomServerAddress(this.serverAddress);
-        LOG.info("Now using default address " + this.serverAddress);
+        LOG.info("Now using default address {}", this.serverAddress);
     }
 
     private void setupServerCommunicator() {
@@ -111,7 +112,7 @@ public abstract class AbstractConnector extends Observable implements IConnector
      *
      * @param additionalerrormessage Display a popup with error message. If this is null, we do not want to display the tooltip.
      */
-    public void reset(State additionalerrormessage) {
+    protected void reset(State additionalerrormessage) {
         if ( !this.userDisconnect && (additionalerrormessage != null) ) {
             notifyConnectionStateChanged(additionalerrormessage);
         }

@@ -2,15 +2,16 @@ package de.fhg.iais.roberta.usb;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.ui.UIController;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.logging.Logger;
 
 public class RobotSearchTask implements Callable<IConnector> {
-    private static final Logger LOG = Logger.getLogger("Connector");
+    private static final Logger LOG = LoggerFactory.getLogger(RobotSearchTask.class);
 
     private final List<IConnector> connectorList;
     private final UIController controller;
@@ -47,13 +48,13 @@ public class RobotSearchTask implements Callable<IConnector> {
             if ( foundRobots.isEmpty() ) {
                 LOG.info("No robot connected!");
             } else if (foundRobots.size() == 1) {
-                LOG.info("Only " + foundRobots.get(0).getBrickName() + " available.");
+                LOG.info("Only {} available.", foundRobots.get(0).getBrickName());
                 return foundRobots.get(0);
             } else {
                 if (wasListUpdated) {
                     LOG.info("list was updated!");
                     for (IConnector robot : foundRobots) {
-                        LOG.info(robot.getBrickName() + " available.");
+                        LOG.info("{} available.", robot.getBrickName());
                     }
                     this.controller.setConnectorMap(foundRobots);
                 }

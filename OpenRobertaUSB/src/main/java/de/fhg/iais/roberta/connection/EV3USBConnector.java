@@ -40,7 +40,7 @@ public class EV3USBConnector extends AbstractConnector {
     public EV3USBConnector(ResourceBundle serverProps) {
         super(serverProps, "ev3");
 
-        LOG.config("Robot ip " + brickIp);
+        LOG.info("Robot ip {}", brickIp);
 
         this.ev3comm = new EV3Communicator(brickIp);
     }
@@ -84,7 +84,7 @@ public class EV3USBConnector extends AbstractConnector {
                         //notifyConnectionStateChanged(this.state);
                     } else if ( this.ev3comm.checkBrickState().equals("false") ) {
                         // brick available and no program running
-                        LOG.info(State.WAIT_EXECUTION + " EV3 plugged in again, no program running, OK");
+                        LOG.info("{} EV3 plugged in again, no program running, OK", State.WAIT_EXECUTION);
                         this.state = State.WAIT_FOR_CMD;
                         notifyConnectionStateChanged(this.state);
                     }
@@ -115,7 +115,7 @@ public class EV3USBConnector extends AbstractConnector {
                     this.brickData.put(KEY_TOKEN, this.token);
                     this.brickData.put(KEY_CMD, CMD_REGISTER);
                 } catch ( IOException brickerror ) {
-                    LOG.info(State.CONNECT_BUTTON_IS_PRESSED + " " + brickerror.getMessage());
+                    LOG.info("{} {}", State.CONNECT_BUTTON_IS_PRESSED, brickerror.getMessage());
                     reset(State.ERROR_BRICK);
                     break;
                 }
@@ -131,7 +131,7 @@ public class EV3USBConnector extends AbstractConnector {
                         try {
                             this.brickData = this.ev3comm.pushToBrick(CMD_REPEAT);
                         } catch ( IOException brickerror ) {
-                            LOG.info(State.CONNECT_BUTTON_IS_PRESSED + " " + brickerror.getMessage());
+                            LOG.info("{} {}", State.CONNECT_BUTTON_IS_PRESSED, brickerror.getMessage());
                             reset(State.ERROR_BRICK);
                             break;
                         }
@@ -140,11 +140,11 @@ public class EV3USBConnector extends AbstractConnector {
                     } else if ( command.equals(CMD_ABORT) ) {
                         reset(State.TOKEN_TIMEOUT);
                     } else {
-                        LOG.info(State.CONNECT_BUTTON_IS_PRESSED + " Command " + command + " unknown");
+                        LOG.info("{} Command {} unknown", State.CONNECT_BUTTON_IS_PRESSED, command);
                         reset(null);
                     }
                 } catch ( IOException | JSONException servererror ) {
-                    LOG.info(State.CONNECT_BUTTON_IS_PRESSED + " " + servererror.getMessage());
+                    LOG.info("{} {}", State.CONNECT_BUTTON_IS_PRESSED, servererror.getMessage());
                     reset(State.ERROR_HTTP);
                 }
                 break;
@@ -154,7 +154,7 @@ public class EV3USBConnector extends AbstractConnector {
                     this.brickData.put(KEY_TOKEN, this.token);
                     this.brickData.put(KEY_CMD, CMD_PUSH);
                 } catch ( IOException brickerror ) {
-                    LOG.info(State.WAIT_FOR_CMD + " " + brickerror.getMessage());
+                    LOG.info("{} {}", State.WAIT_FOR_CMD, brickerror.getMessage());
                     reset(State.ERROR_BRICK);
                     break;
                 }
@@ -163,7 +163,7 @@ public class EV3USBConnector extends AbstractConnector {
                     responseCommandFromServer = this.servcomm.pushRequest(this.brickData).getString(KEY_CMD);
                 } catch ( IOException | JSONException servererror ) {
                     // continue to default block
-                    LOG.info(State.WAIT_FOR_CMD + " Server response not ok " + servererror.getMessage());
+                    LOG.info("{} Server response not ok {}", State.WAIT_FOR_CMD, servererror.getMessage());
                     reset(State.ERROR_HTTP);
                     break;
                 }
@@ -173,7 +173,7 @@ public class EV3USBConnector extends AbstractConnector {
                     try {
                         this.ev3comm.disconnectBrick();
                     } catch ( IOException brickerror ) {
-                        LOG.info(State.WAIT_FOR_CMD + " Got " + CMD_ABORT + " and Brick disconnect failed " + brickerror.getMessage());
+                        LOG.info("{} Got " + CMD_ABORT + " and Brick disconnect failed {}", State.WAIT_FOR_CMD, brickerror.getMessage());
                     }
                     reset(null);
                 } else if ( responseCommandFromServer.equals(CMD_UPDATE) ) {
@@ -193,7 +193,7 @@ public class EV3USBConnector extends AbstractConnector {
                         reset(null);
                         Thread.sleep(3000L);
                     } catch ( IOException e ) {
-                        LOG.info(State.WAIT_FOR_CMD + " Brick update failed " + e.getMessage());
+                        LOG.info("{} Brick update failed {}", State.WAIT_FOR_CMD, e.getMessage());
                         reset(State.ERROR_UPDATE);
                     }
                 } else if ( responseCommandFromServer.equals(CMD_DOWNLOAD) ) {
@@ -206,16 +206,14 @@ public class EV3USBConnector extends AbstractConnector {
                     } catch ( IOException e ) {
                         // do not give up the brick, try another push request
                         // user has to click on run button again
-                        LOG.info(State.WAIT_FOR_CMD + " Downlaod file failed " + e.getMessage());
+                        LOG.info("{} Downlaod file failed {}", State.WAIT_FOR_CMD, e.getMessage());
                         this.state = State.WAIT_FOR_CMD;
                     }
                 } else if ( responseCommandFromServer.equals(CMD_CONFIGURATION) ) {
-                    LOG.warning("Command " + responseCommandFromServer + " unused, ignore and continue push!");
+                    LOG.warn("Command {} unused, ignore and continue push!", responseCommandFromServer);
                 } else {
-
-                    LOG.warning("Command " + responseCommandFromServer + " unknown");
+                    LOG.warn("Command {} unknown", responseCommandFromServer);
                     reset(null);
-
                 }
                 break;
             default:

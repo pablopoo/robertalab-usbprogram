@@ -6,17 +6,18 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
 
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static de.fhg.iais.roberta.usb.USBProgram.closeProgram;
 
 public class UIController implements Observer {
-    private static final Logger LOG = Logger.getLogger("Connector");
+    private static final Logger LOG = LoggerFactory.getLogger(UIController.class);
 
     private Map<String, IConnector> connectorMap = new HashMap<>();
     private IConnector connector;
@@ -36,7 +37,7 @@ public class UIController implements Observer {
     }
 
     public void setConnectorMap(List<IConnector> connectorList) {
-        LOG.info("setConnectorMap");
+        LOG.debug("setConnectorMap");
         for (IConnector conn : connectorList) {
             this.connectorMap.put(conn.getBrickName(), conn);
         }
@@ -53,15 +54,15 @@ public class UIController implements Observer {
     }
 
     public void setConnector(IConnector usbCon) {
-        LOG.info("setConnector");
+        LOG.debug("setConnector");
         this.conView.hideRobotList();
         this.connector = usbCon;
         ((Observable) this.connector).addObserver(this);
-        LOG.config("GUI setup done. Using " + usbCon.getClass().getSimpleName());
+        LOG.info("GUI setup done. Using {}", usbCon.getClass().getSimpleName());
     }
 
     public void setDiscover() {
-        LOG.info("setDiscover");
+        LOG.debug("setDiscover");
         this.connected = false;
         this.conView.setDiscover();
     }
@@ -72,18 +73,18 @@ public class UIController implements Observer {
 
 
     public void showAdvancedOptions() {
-        LOG.info("showAdvancedOptions");
+        LOG.debug("showAdvancedOptions");
         this.conView.showAdvancedOptions();
     }
 
     public void checkForValidCustomServerAddressAndUpdate() {
-        LOG.info("checkForValidCustomServerAddressAndUpdate");
+        LOG.debug("checkForValidCustomServerAddressAndUpdate");
         if ( this.conView.isCustomAddressSelected() ) {
             String ip = this.conView.getCustomIP();
             String port = this.conView.getCustomPort();
             if ( (ip != null) && (port != null) && !ip.isEmpty() && !port.isEmpty() ) {
                 String address = ip + ":" + port;
-                LOG.info("Valid custom address " + address);
+                LOG.info("Valid custom address {}", address);
                 this.connector.updateCustomServerAddress(address);
             } else {
                 LOG.info("Invalid custom address (null or empty) - Using default address");
@@ -103,7 +104,7 @@ public class UIController implements Observer {
     }
 
     public void closeApplication() {
-        LOG.info("closeApplication");
+        LOG.debug("closeApplication");
         if ( this.connected ) {
             String[] buttons = {
                 this.rb.getString("close"),
@@ -135,7 +136,7 @@ public class UIController implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         State state = (State) arg;
-        LOG.info("update " + state);
+        LOG.debug("update " + state);
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 //this.conView.setNew(this.connector.getBrickName());
@@ -183,7 +184,7 @@ public class UIController implements Observer {
     }
 
     public void showAboutPopup() {
-        LOG.info("showAboutPopup");
+        LOG.debug("showAboutPopup");
         ORAPopup.showPopup(
             this.conView,
             this.rb.getString("about"),
