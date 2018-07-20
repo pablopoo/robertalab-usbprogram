@@ -46,7 +46,7 @@ public class ORAPopup extends JOptionPane {
 
     public static int showPopup(Component component, String title, String text, Icon icon) {
         if ( icon == null ) {
-            icon = new ImageIcon(ORAPopup.class.getClassLoader().getResource("warning-outline.png"));
+            icon = new ImageIcon(ORAPopup.class.getClassLoader().getResource("images/warning-outline.png"));
         }
         return showPopup(component, title, text, icon, new String[] {
             "OK"

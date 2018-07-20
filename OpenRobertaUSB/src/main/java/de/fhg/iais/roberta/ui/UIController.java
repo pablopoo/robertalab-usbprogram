@@ -115,7 +115,7 @@ public class UIController implements Observer {
                     this.conView,
                     this.rb.getString("attention"),
                     this.rb.getString("confirmCloseInfo"),
-                    new ImageIcon(getClass().getClassLoader().getResource("Roberta.png")),
+                    new ImageIcon(getClass().getClassLoader().getResource("images/Roberta.png")),
                     buttons);
             if ( n == 0 ) {
                 if ( this.connector != null ) {
@@ -190,7 +190,7 @@ public class UIController implements Observer {
             this.rb.getString("about"),
             this.rb.getString("aboutInfo"),
             new ImageIcon(
-                new ImageIcon(getClass().getClassLoader().getResource("iais_logo.gif"))
+                new ImageIcon(getClass().getClassLoader().getResource("images/iais_logo.gif"))
                     .getImage()
                     .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
     }

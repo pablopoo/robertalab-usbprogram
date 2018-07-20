@@ -213,7 +213,7 @@
 							<stayAlive>false</stayAlive>
 							<restartOnCrash>true</restartOnCrash>
 							<manifest></manifest>
-							<icon>${basedir}/src/main/resources/OR.ico</icon>
+							<icon>src/main/resources/images/OR.ico</icon>
 							<singleInstance>
 								<mutexName>OpenRoberta</mutexName>
 								<windowTitle></windowTitle>

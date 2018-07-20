@@ -415,35 +415,35 @@ public class ConnectionView extends JFrame {
     }
 
     private void createIcons() {
-        URL imgURL = getClass().getClassLoader().getResource("OR.png");
+        URL imgURL = getClass().getClassLoader().getResource("images/OR.png");
         if ( imgURL != null ) {
             this.icoTitle = new ImageIcon(imgURL);
         }
-        imgURL = getClass().getClassLoader().getResource("Roberta_Menu_Icon_green.png");
+        imgURL = getClass().getClassLoader().getResource("images/Roberta_Menu_Icon_green.png");
         if ( imgURL != null ) {
             this.icoRobotConnected = new ImageIcon(imgURL);
         }
-        imgURL = getClass().getClassLoader().getResource("Roberta_Menu_Icon_red.png");
+        imgURL = getClass().getClassLoader().getResource("images/Roberta_Menu_Icon_red.png");
         if ( imgURL != null ) {
             this.icoRobotDiscovered = new ImageIcon(imgURL);
         }
-        imgURL = getClass().getClassLoader().getResource("Roberta_Menu_Icon_grey.png");
+        imgURL = getClass().getClassLoader().getResource("images/Roberta_Menu_Icon_grey.png");
         if ( imgURL != null ) {
             this.icoRobotNotDiscovered = new ImageIcon(imgURL);
         }
-        imgURL = getClass().getClassLoader().getResource("plug.gif");
+        imgURL = getClass().getClassLoader().getResource("images/plug.gif");
         if ( imgURL != null ) {
             this.gifPlug = new ImageIcon(imgURL);
         }
-        imgURL = getClass().getClassLoader().getResource("connect.gif");
+        imgURL = getClass().getClassLoader().getResource("images/connect.gif");
         if ( imgURL != null ) {
             this.gifConnect = new ImageIcon(imgURL);
         }
-        imgURL = getClass().getClassLoader().getResource("server.gif");
+        imgURL = getClass().getClassLoader().getResource("images/server.gif");
         if ( imgURL != null ) {
             this.gifServer = new ImageIcon(imgURL);
         }
-        imgURL = getClass().getClassLoader().getResource("connected.gif");
+        imgURL = getClass().getClassLoader().getResource("images/connected.gif");
         if ( imgURL != null ) {
             this.gifConnected = new ImageIcon(imgURL);
         }
