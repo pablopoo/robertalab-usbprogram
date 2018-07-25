@@ -1,12 +1,11 @@
 package de.fhg.iais.roberta.ui;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
-import java.awt.Font;
-import java.awt.Insets;
+import de.fhg.iais.roberta.connection.IConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
 import java.net.URL;
@@ -14,28 +13,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.ImageIcon;
-import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JList;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JSeparator;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.WindowConstants;
-
-import de.fhg.iais.roberta.connection.IConnector;
-
 public class ConnectionView extends JFrame {
+    private static final Logger LOG = LoggerFactory.getLogger(ConnectionView.class);
 
     private static final long serialVersionUID = 1L;
     private static final int WIDTH = 310;
@@ -48,7 +27,7 @@ public class ConnectionView extends JFrame {
         try {
             UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
         } catch ( ClassNotFoundException | IllegalAccessException | UnsupportedLookAndFeelException | InstantiationException e ) {
-            //            LOG.severe("Error when setting up the look and feel: " + e.getMessage());
+            LOG.error("Error when setting up the look and feel: {}", e.getMessage());
         }
         UIManager.put("MenuBar.background", Color.white);
         UIManager.put("Menu.background", Color.white);
@@ -74,6 +53,7 @@ public class ConnectionView extends JFrame {
     private final JMenuBar menu = new JMenuBar();
 
     private final JMenu menuFile = new JMenu();
+    private final JMenuItem menuItemSerial = new JMenuItem();
     private final JMenuItem menuItemClose = new JMenuItem();
 
     private final JMenu menuInfo = new JMenu();
@@ -159,6 +139,9 @@ public class ConnectionView extends JFrame {
         this.menu.add(this.menuFile);
         this.menuFile.setText(this.messages.getString("file"));
         this.menuFile.add(this.menuItemClose);
+        this.menuFile.add(this.menuItemSerial);
+        this.menuItemSerial.setText("Serial"); //TODO
+        this.menuItemSerial.setActionCommand("serial");
         this.menuItemClose.setText(this.messages.getString("close"));
         this.menuItemClose.setActionCommand("close");
 
@@ -307,13 +290,14 @@ public class ConnectionView extends JFrame {
         this.pnlCustomAddress.setVisible(true);
     }
 
-    public void setConnectActionListener(ActionListener connectListener) {
-        this.menuItemClose.addActionListener(connectListener);
-        this.menuItemAbout.addActionListener(connectListener);
-        this.butConnect.addActionListener(connectListener);
-        this.butBack.addActionListener(connectListener);
-        this.butClose.addActionListener(connectListener);
-        this.checkCustom.addActionListener(connectListener);
+    public void setConnectActionListener(ActionListener listener) {
+        this.menuItemSerial.addActionListener(listener);
+        this.menuItemClose.addActionListener(listener);
+        this.menuItemAbout.addActionListener(listener);
+        this.butConnect.addActionListener(listener);
+        this.butBack.addActionListener(listener);
+        this.butClose.addActionListener(listener);
+        this.checkCustom.addActionListener(listener);
     }
 
     public void setWindowListener(WindowListener windowListener) {

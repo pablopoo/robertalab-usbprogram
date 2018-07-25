@@ -1,18 +1,16 @@
 package de.fhg.iais.roberta.connection;
 
-import java.io.IOException;
-//import java.lang.ProcessBuilder.Redirect;
-import java.util.Properties;
-
+import de.fhg.iais.roberta.util.Utils;
 import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
 
-import de.fhg.iais.roberta.util.Utils;
-import jssc.SerialPort;
+import java.io.IOException;
+import java.util.Properties;
+
+//import java.lang.ProcessBuilder.Redirect;
 
 public class ArduinoCommunicator {
     private final Properties commProperties;
-    SerialPort serialPort;
     String connOptions;
     String osKey = "";
     String osKeyPath = "";
@@ -100,11 +98,5 @@ public class ArduinoCommunicator {
             e.printStackTrace();
 
         }
-
     }
-
-    public boolean isConnected() {
-        return this.serialPort.isOpened();
-    }
-
 }

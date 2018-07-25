@@ -10,12 +10,12 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
-public class ORAActionListener extends WindowAdapter implements ActionListener {
-    private static final Logger LOG = LoggerFactory.getLogger(ORAActionListener.class);
+public class ConnectionViewListener extends WindowAdapter implements ActionListener {
+    private static final Logger LOG = LoggerFactory.getLogger(ConnectionViewListener.class);
 
     private final UIController uiController;
 
-    public ORAActionListener(UIController uiController) {
+    public ConnectionViewListener(UIController uiController) {
         this.uiController = uiController;
     }
 
@@ -35,6 +35,9 @@ public class ORAActionListener extends WindowAdapter implements ActionListener {
             LOG.debug("User back");
             USBProgram.stopConnector();
             this.uiController.setDiscover();
+        } else if ( button.getActionCommand().equals("serial")) {
+            LOG.debug("User serial");
+            this.uiController.showSerialMonitor();
         } else {
             if ( button.isSelected() ) {
                 LOG.debug("User connect");

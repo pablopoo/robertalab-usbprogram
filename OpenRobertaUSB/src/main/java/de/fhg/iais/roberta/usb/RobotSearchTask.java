@@ -39,6 +39,7 @@ public class RobotSearchTask implements Callable<IConnector> {
         return updated;
     }
 
+    @Override
     public IConnector call() {
         List<IConnector> foundRobots = new ArrayList<>();
 

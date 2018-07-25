@@ -1,18 +1,21 @@
 package de.fhg.iais.roberta.ui;
 
+import de.fhg.iais.roberta.connection.IConnector;
+import de.fhg.iais.roberta.connection.IConnector.State;
+import de.fhg.iais.roberta.connection.SerialLoggingTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.swing.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.ResourceBundle;
-
-import javax.swing.ImageIcon;
-
-import de.fhg.iais.roberta.connection.IConnector;
-import de.fhg.iais.roberta.connection.IConnector.State;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static de.fhg.iais.roberta.usb.USBProgram.closeProgram;
 
@@ -25,13 +28,17 @@ public class UIController implements Observer {
     private boolean connected;
     private final ResourceBundle rb;
 
+    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private SerialMonitor serialMonitor;
+    private Future<Void> serialLoggingFuture;
+
     public UIController(ConnectionView conView, ResourceBundle rb) {
         this.conView = conView;
         this.conView.setVisible(true);
         this.rb = rb;
         this.connected = false;
 
-        ORAActionListener listener = new ORAActionListener(this);
+        ConnectionViewListener listener = new ConnectionViewListener(this);
         this.conView.setWindowListener(listener);
         this.conView.setConnectActionListener(listener);
     }
@@ -83,7 +90,7 @@ public class UIController implements Observer {
             String ip = this.conView.getCustomIP();
             String port = this.conView.getCustomPort();
             if ( (ip != null) && (port != null) && !ip.isEmpty() && !port.isEmpty() ) {
-                String address = ip + ":" + port;
+                String address = ip + ':' + port;
                 LOG.info("Valid custom address {}", address);
                 this.connector.updateCustomServerAddress(address);
             } else {
@@ -136,7 +143,7 @@ public class UIController implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         State state = (State) arg;
-        LOG.debug("update " + state);
+        LOG.debug("update {}", state);
         switch ( state ) {
             case WAIT_FOR_CONNECT_BUTTON_PRESS:
                 //this.conView.setNew(this.connector.getBrickName());
@@ -193,5 +200,36 @@ public class UIController implements Observer {
                 new ImageIcon(getClass().getClassLoader().getResource("images/iais_logo.gif"))
                     .getImage()
                     .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
+    }
+
+    public void showSerialMonitor() {
+        LOG.debug("showSerialMonitor");
+        this.serialMonitor = new SerialMonitor(this.rb, new SerialMonitorListener(this));
+        this.serialMonitor.setVisible(true);
+
+        restartSerialLogging();
+    }
+
+    public void restartSerialLogging() {
+        stopSerialLogging();
+        this.serialLoggingFuture = this.executorService.submit(new SerialLoggingTask(this, this.serialMonitor.getSerialRate()));
+    }
+
+    public void appendSerial(final byte[] readBuffer) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override public void run() {
+                UIController.this.serialMonitor.appendText(readBuffer);
+            }
+        });
+    }
+
+    public void clearSerialLog() {
+        this.serialMonitor.clearText();
+    }
+
+    public void stopSerialLogging() {
+        if (this.serialLoggingFuture != null) {
+            this.serialLoggingFuture.cancel(true);
+        }
     }
 }
