@@ -202,6 +202,12 @@ public class UIController implements Observer {
                     .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
     }
 
+    public void setArduinoType() {
+        if (this.connector != null) {
+            this.connector.setType(this.conView.getSelectedArduino());
+        }
+    }
+
     public void showSerialMonitor() {
         LOG.debug("showSerialMonitor");
         this.serialMonitor = new SerialMonitor(this.rb, new SerialMonitorListener(this));

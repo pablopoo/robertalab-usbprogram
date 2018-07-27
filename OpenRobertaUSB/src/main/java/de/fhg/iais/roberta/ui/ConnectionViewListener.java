@@ -20,8 +20,8 @@ public class ConnectionViewListener extends WindowAdapter implements ActionListe
     }
 
     @Override
-    public void actionPerformed(ActionEvent actionEvent) {
-        AbstractButton button = (AbstractButton) actionEvent.getSource();
+    public void actionPerformed(ActionEvent e) {
+        AbstractButton button = (AbstractButton) e.getSource();
         if ( button.getActionCommand().equals("close") ) {
             LOG.debug("User close");
             this.uiController.closeApplication();
@@ -38,6 +38,9 @@ public class ConnectionViewListener extends WindowAdapter implements ActionListe
         } else if ( button.getActionCommand().equals("serial")) {
             LOG.debug("User serial");
             this.uiController.showSerialMonitor();
+        } else if (button.getActionCommand().startsWith("arduino:")) {
+            LOG.debug("User arduino type");
+            this.uiController.setArduinoType();
         } else {
             if ( button.isSelected() ) {
                 LOG.debug("User connect");

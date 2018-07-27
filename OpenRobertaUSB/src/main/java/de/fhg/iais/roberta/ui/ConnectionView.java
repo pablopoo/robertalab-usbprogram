@@ -1,5 +1,6 @@
 package de.fhg.iais.roberta.ui;
 
+import de.fhg.iais.roberta.connection.ArduinoType;
 import de.fhg.iais.roberta.connection.IConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,6 +10,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowListener;
 import java.net.URL;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -53,11 +55,16 @@ public class ConnectionView extends JFrame {
     private final JMenuBar menu = new JMenuBar();
 
     private final JMenu menuFile = new JMenu();
-    private final JMenuItem menuItemSerial = new JMenuItem();
+
     private final JMenuItem menuItemClose = new JMenuItem();
 
     private final JMenu menuInfo = new JMenu();
     private final JMenuItem menuItemAbout = new JMenuItem();
+
+    private final JMenu menuArduino = new JMenu();
+    private final JMenu menuArduType = new JMenu();
+    private final ButtonGroup buttonGroupArduinoType = new ButtonGroup();
+    private final JMenuItem menuItemSerial = new JMenuItem();
 
     private final JLabel lblRobot = new JLabel();
 
@@ -139,9 +146,6 @@ public class ConnectionView extends JFrame {
         this.menu.add(this.menuFile);
         this.menuFile.setText(this.messages.getString("file"));
         this.menuFile.add(this.menuItemClose);
-        this.menuFile.add(this.menuItemSerial);
-        this.menuItemSerial.setText("Serial"); //TODO
-        this.menuItemSerial.setActionCommand("serial");
         this.menuItemClose.setText(this.messages.getString("close"));
         this.menuItemClose.setActionCommand("close");
 
@@ -151,6 +155,22 @@ public class ConnectionView extends JFrame {
         this.menuInfo.add(this.menuItemAbout);
         this.menuItemAbout.setText(this.messages.getString("about"));
         this.menuItemAbout.setActionCommand("about");
+
+        // Arduino
+        this.menu.add(this.menuArduino);
+        this.menuArduino.setText("Arduino"); //TODO
+        this.menuArduino.add(this.menuArduType);
+        this.menuArduType.setText("Type"); //TODO
+        for (ArduinoType type : ArduinoType.values()) {
+            JRadioButtonMenuItem menuItemArduType = new JRadioButtonMenuItem(type.toString());
+            menuItemArduType.setActionCommand("arduino:" + type);
+            this.menuArduType.add(menuItemArduType);
+            this.buttonGroupArduinoType.add(menuItemArduType);
+        }
+        this.buttonGroupArduinoType.getElements().nextElement().setSelected(true); // tick first element
+        this.menuArduino.add(this.menuItemSerial);
+        this.menuItemSerial.setText("Serial"); //TODO
+        this.menuItemSerial.setActionCommand("serial");
 
         this.menu.add(Box.createHorizontalGlue());
 
@@ -291,9 +311,12 @@ public class ConnectionView extends JFrame {
     }
 
     public void setConnectActionListener(ActionListener listener) {
-        this.menuItemSerial.addActionListener(listener);
         this.menuItemClose.addActionListener(listener);
         this.menuItemAbout.addActionListener(listener);
+        this.menuItemSerial.addActionListener(listener);
+        for (AbstractButton button : Collections.list(this.buttonGroupArduinoType.getElements())) {
+            button.addActionListener(listener);
+        }
         this.butConnect.addActionListener(listener);
         this.butBack.addActionListener(listener);
         this.butClose.addActionListener(listener);
@@ -380,6 +403,11 @@ public class ConnectionView extends JFrame {
             this.hideCustom();
             this.revalidate();
         }
+    }
+
+    public String getSelectedArduino() {
+        String actionCommand = this.buttonGroupArduinoType.getSelection().getActionCommand();
+        return actionCommand.replace("arduino:", "");
     }
 
     public void setConnectButtonText(String text) {

@@ -1,11 +1,11 @@
 package de.fhg.iais.roberta.connection;
 
-import java.util.Observable;
-import java.util.ResourceBundle;
-
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Observable;
+import java.util.ResourceBundle;
 
 public abstract class AbstractConnector extends Observable implements IConnector {
     protected static final Logger LOG = LoggerFactory.getLogger(AbstractConnector.class);
@@ -84,6 +84,11 @@ public abstract class AbstractConnector extends Observable implements IConnector
     @Override
     public String getBrickName() {
         return this.brickName;
+    }
+
+    @Override
+    public void setType(String type) {
+        // no type needed for the general robot
     }
 
     @Override

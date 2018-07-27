@@ -88,6 +88,11 @@ public interface IConnector extends Callable<Boolean> {
     String getBrickName();
 
     /**
+     * Sets what specialized type of robot is connected (currently selection between Arduinos, possibly EV3Lejos/EV3dev)
+     */
+    void setType(String type);
+
+    /**
      * In this state, the connector will download system libraries from the server, and upload it to the robot.
      */
     void update();

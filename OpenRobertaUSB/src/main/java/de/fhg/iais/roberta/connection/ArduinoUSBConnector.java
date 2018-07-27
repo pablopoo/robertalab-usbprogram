@@ -1,5 +1,10 @@
 package de.fhg.iais.roberta.connection;
 
+import de.fhg.iais.roberta.util.JWMI;
+import de.fhg.iais.roberta.util.ORAtokenGenerator;
+import org.apache.commons.lang3.SystemUtils;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,16 +15,11 @@ import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.SystemUtils;
-import org.json.JSONObject;
-
-import de.fhg.iais.roberta.util.JWMI;
-import de.fhg.iais.roberta.util.ORAtokenGenerator;
-
 public class ArduinoUSBConnector extends AbstractConnector {
     protected String portName = null;
 
     private ArduinoCommunicator arducomm = null;
+    private ArduinoType type = ArduinoType.UNO;
 
     public ArduinoUSBConnector(ResourceBundle serverProps) {
         super(serverProps, "arduino");
@@ -56,7 +56,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     LOG.info("No Arduino device connected");
                     Thread.sleep(1000);
                 } else {
-                    this.arducomm = new ArduinoCommunicator(this.brickName);
+                    this.arducomm = new ArduinoCommunicator(this.brickName, this.type);
                     this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                     notifyConnectionStateChanged(this.state);
                     break;
@@ -150,6 +150,14 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 }
             default:
                 break;
+        }
+    }
+
+    @Override
+    public void setType(String type) {
+        this.type = ArduinoType.fromString(type);
+        if (this.arducomm != null) {
+            this.arducomm.setType(this.type);
         }
     }
 
