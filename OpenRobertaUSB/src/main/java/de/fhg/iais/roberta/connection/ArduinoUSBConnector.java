@@ -178,7 +178,8 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
     protected boolean findArduWindows() {
         try {
-            return JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption").contains("Arduino");
+            String wmiValue = JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
+            return wmiValue.contains("Arduino") || wmiValue.contains("USB Serial Port") || wmiValue.contains("USB Serial Device");
         } catch ( Exception e ) {
             LOG.error("Something went wrong when finding Arduinos: {}", e.getMessage());
             return false;
@@ -190,7 +191,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
             File file = new File("/dev/serial/by-id/");
             String[] directories = file.list();
             for ( String directory : directories ) {
-                if ( directory.matches(".*Arduino.*") ) {
+                if ( directory.matches(".*Arduino.*") || directory.matches(".*FT232R_USB_UART.*") ) {
                     return true;
                 }
             }
@@ -203,7 +204,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
     protected void getPortName() throws Exception {
         if ( SystemUtils.IS_OS_WINDOWS ) {
             String ArduQueryResult = JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
-            Matcher m = Pattern.compile("(Arduino \\()(.*)\\)").matcher(ArduQueryResult);
+            Matcher m = Pattern.compile("(Arduino|USB Serial Port|USB Serial Device).*(\\(COM.\\))").matcher(ArduQueryResult);
             while ( m.find() ) {
                 this.portName = m.group(2);
             }
@@ -216,7 +217,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
                 String line;
                 while ( (line = reader.readLine()) != null ) {
-                    Matcher m = Pattern.compile("(ttyACM)").matcher(line);
+                    Matcher m = Pattern.compile("(ttyACM|ttyUSB)").matcher(line);
                     if ( m.find() ) {
                         this.portName = line;
                     }
