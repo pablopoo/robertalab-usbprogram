@@ -47,11 +47,11 @@ public class ArduinoCommunicator {
     public JSONObject getDeviceInfo() {
         JSONObject deviceInfo = new JSONObject();
 
-        deviceInfo.put("firmwarename", "Arduino" + this.type); //TODO revise the whole thing
+        deviceInfo.put("firmwarename", "Arduino"); //TODO revise the whole thing
         deviceInfo.put("robot", "ardu");
         deviceInfo.put("firmwareversion", "1.1.1");
         deviceInfo.put("macaddr", "0.121.99");
-        deviceInfo.put("brickname", this.brickName);
+        deviceInfo.put("brickname", this.brickName + this.type);
         deviceInfo.put("battery", "90.0");
         deviceInfo.put("menuversion", "1.4.0");
 
@@ -67,15 +67,12 @@ public class ArduinoCommunicator {
         try {
             String pArg = "";
             String cArg = "";
-            if (this.type == ArduinoType.UNO) {
+            if ( (this.type == ArduinoType.UNO) || (this.type == ArduinoType.NANO) ) {
                 pArg = "-patmega328p";
                 cArg = "-carduino";
             } else if (this.type == ArduinoType.MEGA) {
                 pArg = "-patmega2560";
                 cArg = "-cwiring";
-            } else if (this.type == ArduinoType.NANO) {
-                pArg = "-pm328p"; //TODO
-                cArg = "-carduino"; //TODO
             }
 
             ProcessBuilder procBuilder = new ProcessBuilder(this.avrPath,
