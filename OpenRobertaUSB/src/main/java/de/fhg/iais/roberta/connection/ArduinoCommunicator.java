@@ -16,12 +16,11 @@ public class ArduinoCommunicator {
     private String avrPath = ""; //path for avrdude bin
     private String avrConfPath = ""; //path for the .conf file
     private final String brickName;
-    private ArduinoType type;
+    private ArduinoType type = ArduinoType.UNO;
 
-    public ArduinoCommunicator(String brickName, ArduinoType type) {
+    public ArduinoCommunicator(String brickName) {
         this.commProperties = Utils.loadProperties("classpath:OpenRobertaUSB.properties");
         this.brickName = brickName;
-        this.type = type;
     }
 
     public void setType(ArduinoType type) {
@@ -47,13 +46,9 @@ public class ArduinoCommunicator {
     public JSONObject getDeviceInfo() {
         JSONObject deviceInfo = new JSONObject();
 
-        deviceInfo.put("firmwarename", "Arduino"); //TODO revise the whole thing
+        deviceInfo.put("firmwarename", "Arduino");
         deviceInfo.put("robot", "ardu");
-        deviceInfo.put("firmwareversion", "1.1.1");
-        deviceInfo.put("macaddr", "0.121.99");
-        deviceInfo.put("brickname", this.brickName + this.type);
-        deviceInfo.put("battery", "90.0");
-        deviceInfo.put("menuversion", "1.4.0");
+        deviceInfo.put("brickname", this.brickName);
 
         return deviceInfo;
     }

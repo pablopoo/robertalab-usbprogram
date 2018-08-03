@@ -31,6 +31,7 @@ public interface IConnector extends Callable<Boolean> {
 
     String KEY_TOKEN = "token";
     String KEY_CMD = "cmd";
+    String KEY_SUBTYPE = "subtype";
 
     String CMD_REGISTER = "register";
     String CMD_PUSH = "push";
@@ -86,11 +87,6 @@ public interface IConnector extends Callable<Boolean> {
      * @return robot name
      */
     String getBrickName();
-
-    /**
-     * Sets what specialized type of robot is connected (currently selection between Arduinos, possibly EV3Lejos/EV3dev)
-     */
-    void setType(String type);
 
     /**
      * In this state, the connector will download system libraries from the server, and upload it to the robot.

@@ -1,7 +1,11 @@
 package de.fhg.iais.roberta.connection;
 
+import org.apache.commons.io.IOUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.BufferedInputStream;
-//import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,11 +18,7 @@ import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.net.ssl.HttpsURLConnection;
-
-import org.apache.commons.io.IOUtils;
-import org.json.JSONException;
-import org.json.JSONObject;
+//import java.io.BufferedInputStream;
 
 /**
  * The server communicator runs the server protocol on behalf of the actual robot hardware.
@@ -85,8 +85,13 @@ public class ServerCommunicator {
         ProtocolException {
         URLConnection conn;
         try {
-            conn = getHttpsConnection(url, requestMethod, requestProperties);
-            conn.connect();
+            if (!url.contains("localhost")) {
+                conn = getHttpsConnection(url, requestMethod, requestProperties);
+                conn.connect();
+            } else { // workaround for HttpParser warning serverside when connecting via localhost
+                conn = getHttpConnection(url, requestMethod, requestProperties);
+                conn.connect();
+            }
         } catch ( IOException ioException ) {
             conn = getHttpConnection(url, requestMethod, requestProperties);
             conn.connect();

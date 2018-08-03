@@ -38,9 +38,6 @@ public class ConnectionViewListener extends WindowAdapter implements ActionListe
         } else if ( button.getActionCommand().equals("serial")) {
             LOG.debug("User serial");
             this.uiController.showSerialMonitor();
-        } else if (button.getActionCommand().startsWith("arduino:")) {
-            LOG.debug("User arduino type");
-            this.uiController.setArduinoType();
         } else {
             if ( button.isSelected() ) {
                 LOG.debug("User connect");

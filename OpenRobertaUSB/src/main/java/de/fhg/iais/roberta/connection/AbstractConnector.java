@@ -87,11 +87,6 @@ public abstract class AbstractConnector extends Observable implements IConnector
     }
 
     @Override
-    public void setType(String type) {
-        // no type needed for the general robot
-    }
-
-    @Override
     public void update() {
         // no firmware update intended for general robots
     }

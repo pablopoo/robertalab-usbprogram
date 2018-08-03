@@ -19,10 +19,9 @@ public class ArduinoUSBConnector extends AbstractConnector {
     protected String portName = null;
 
     private ArduinoCommunicator arducomm = null;
-    private ArduinoType type = ArduinoType.UNO;
 
     public ArduinoUSBConnector(ResourceBundle serverProps) {
-        super(serverProps, "arduino");
+        super(serverProps, "Arduino");
     }
 
     protected ArduinoUSBConnector(ResourceBundle serverProps, String brickName) {
@@ -56,7 +55,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     LOG.info("No Arduino device connected");
                     Thread.sleep(1000);
                 } else {
-                    this.arducomm = new ArduinoCommunicator(this.brickName, this.type);
+                    this.arducomm = new ArduinoCommunicator(this.brickName);
                     this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                     notifyConnectionStateChanged(this.state);
                     break;
@@ -109,7 +108,8 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 this.brickData.put(KEY_TOKEN, this.token);
                 this.brickData.put(KEY_CMD, CMD_PUSH);
                 try {
-                    String cmdKey = this.servcomm.pushRequest(this.brickData).getString(KEY_CMD);
+                    JSONObject response = this.servcomm.pushRequest(this.brickData);
+                    String cmdKey = response.getString(KEY_CMD);
                     if ( cmdKey.equals(CMD_REPEAT) ) {
                         break;
                     } else if ( cmdKey.equals(CMD_DOWNLOAD) ) {
@@ -129,6 +129,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                                 os.write(binaryfile);
                             }
 
+                            this.arducomm.setType(ArduinoType.fromString(response.getString(KEY_SUBTYPE)));
                             this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
                             this.state = State.WAIT_EXECUTION;
                         } catch ( IOException io ) {
@@ -150,14 +151,6 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 }
             default:
                 break;
-        }
-    }
-
-    @Override
-    public void setType(String type) {
-        this.type = ArduinoType.fromString(type);
-        if (this.arducomm != null) {
-            this.arducomm.setType(this.type);
         }
     }
 
