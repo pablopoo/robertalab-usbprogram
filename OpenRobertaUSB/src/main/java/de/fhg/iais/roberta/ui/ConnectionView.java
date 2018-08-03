@@ -345,6 +345,7 @@ public class ConnectionView extends JFrame {
     }
 
     public void setWaitForCmd() {
+        this.butConnect.setText(this.messages.getString("disconnect"));
         this.butConnect.setEnabled(true);
         this.butConnect.setSelected(true);
         this.lblRobot.setIcon(this.icoRobotConnected);
@@ -364,7 +365,7 @@ public class ConnectionView extends JFrame {
         this.lblMainGif.setIcon(this.gifPlug);
     }
 
-    public void setDiscoverConnected() {
+    public void setWaitForServer() {
         this.butConnect.setSelected(false);
         this.butConnect.setEnabled(false);
     }

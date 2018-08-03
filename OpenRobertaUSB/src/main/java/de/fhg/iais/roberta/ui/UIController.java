@@ -152,6 +152,7 @@ public class UIController implements Observer {
                 break;
             case WAIT_FOR_SERVER:
                 this.conView.setNew(this.rb.getString("token") + ' ' + this.connector.getToken());
+                this.conView.setWaitForServer();
                 break;
             case RECONNECT:
                 this.conView.setConnectButtonText(this.rb.getString("disconnect"));

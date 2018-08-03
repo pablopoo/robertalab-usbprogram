@@ -48,13 +48,11 @@ public class ConnectionViewListener extends WindowAdapter implements ActionListe
                     this.uiController.checkForValidCustomServerAddressAndUpdate();
                     this.uiController.getConnector().userPressConnectButton();
                 }
-                button.setText(this.uiController.getRb().getString("disconnect")); //TODO
             } else {
                 LOG.debug("User disconnect");
                 if ( this.uiController.getConnector() != null ) {
                     this.uiController.getConnector().userPressDisconnectButton();
                 }
-                button.setText(this.uiController.getRb().getString("connect")); //TODO
             }
         }
     }
