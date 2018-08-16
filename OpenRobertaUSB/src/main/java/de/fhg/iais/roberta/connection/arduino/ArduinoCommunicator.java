@@ -1,46 +1,23 @@
-package de.fhg.iais.roberta.connection;
+package de.fhg.iais.roberta.connection.arduino;
 
-import de.fhg.iais.roberta.util.Utils;
 import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.Properties;
 
-public class ArduinoCommunicator {
+public class ArduinoCommunicator extends AbstractArduinoCommunicator {
     private static final Logger LOG = LoggerFactory.getLogger(ArduinoCommunicator.class);
 
-    private final Properties commProperties;
-    private String avrPath = ""; //path for avrdude bin
-    private String avrConfPath = ""; //path for the .conf file
-    private final String brickName;
     private ArduinoType type = ArduinoType.UNO;
 
     public ArduinoCommunicator(String brickName) {
-        this.commProperties = Utils.loadProperties("classpath:OpenRobertaUSB.properties");
-        this.brickName = brickName;
+        super(brickName);
     }
 
     public void setType(ArduinoType type) {
         this.type = type;
-    }
-
-    public void setParameters() {
-        if ( SystemUtils.IS_OS_WINDOWS ) {
-            this.avrPath = this.commProperties.getProperty("WinPath");
-            this.avrConfPath = this.commProperties.getProperty("WinConfPath");
-
-        } else if ( SystemUtils.IS_OS_LINUX ) {
-            this.avrPath = this.commProperties.getProperty("LinPath");
-            this.avrConfPath = this.commProperties.getProperty("LinConfPath");
-
-        } else {
-            this.avrPath = this.commProperties.getProperty("OsXPath");
-            this.avrConfPath = this.commProperties.getProperty("MacConfPath");
-
-        }
     }
 
     public JSONObject getDeviceInfo() {
@@ -79,9 +56,6 @@ public class ArduinoCommunicator {
                     "-C" + this.avrConfPath,
                     "-P" + portPath + portName);
 
-//            procBuilder.redirectInput(Redirect.INHERIT);
-//            procBuilder.redirectOutput(Redirect.INHERIT);
-//            procBuilder.redirectError(Redirect.INHERIT);
             Process p = procBuilder.start();
             int ecode = p.waitFor();
             LOG.error("Exit code {}", ecode);

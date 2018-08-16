@@ -1,7 +1,6 @@
-package de.fhg.iais.roberta.connection;
+package de.fhg.iais.roberta.connection.ev3;
 
-import java.io.IOException;
-
+import de.fhg.iais.roberta.connection.IConnector;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -13,6 +12,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
+
+import java.io.IOException;
 
 /**
  * The EV3 is running an http server. We initialise the connection to the robot by the USB program, because of possible firewall issues.

@@ -1,5 +1,6 @@
-package de.fhg.iais.roberta.connection;
+package de.fhg.iais.roberta.connection.arduino;
 
+import de.fhg.iais.roberta.connection.AbstractConnector;
 import de.fhg.iais.roberta.util.JWMI;
 import de.fhg.iais.roberta.util.ORAtokenGenerator;
 import org.apache.commons.lang3.SystemUtils;
@@ -18,7 +19,7 @@ import java.util.regex.Pattern;
 public class ArduinoUSBConnector extends AbstractConnector {
     protected String portName = null;
 
-    private ArduinoCommunicator arducomm = null;
+    private AbstractArduinoCommunicator arducomm = null;
 
     public ArduinoUSBConnector(ResourceBundle serverProps) {
         super(serverProps, "Arduino");
@@ -33,12 +34,16 @@ public class ArduinoUSBConnector extends AbstractConnector {
         if ( SystemUtils.IS_OS_LINUX ) {
             return findArduinoLinux();
         } else if ( SystemUtils.IS_OS_WINDOWS ) {
-            return findArduWindows();
+            return findArduinoWindows();
         } else if ( SystemUtils.IS_OS_MAC_OSX ) {
             return findArduinoMac();
         } else {
             return false;
         }
+    }
+
+    protected AbstractArduinoCommunicator createArduinoCommunicator() {
+        return new ArduinoCommunicator(this.brickName);
     }
 
     @Override
@@ -55,7 +60,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     LOG.info("No Arduino device connected");
                     Thread.sleep(1000);
                 } else {
-                    this.arducomm = new ArduinoCommunicator(this.brickName);
+                    this.arducomm = createArduinoCommunicator();
                     this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                     notifyConnectionStateChanged(this.state);
                     break;
@@ -129,7 +134,9 @@ public class ArduinoUSBConnector extends AbstractConnector {
                                 os.write(binaryfile);
                             }
 
-                            this.arducomm.setType(ArduinoType.fromString(response.getString(KEY_SUBTYPE)));
+                            if ( this.brickName.equals("Arduino") ) {
+                                this.arducomm.setType(ArduinoType.fromString(response.getString(KEY_SUBTYPE)));
+                            }
                             this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
                             this.state = State.WAIT_EXECUTION;
                         } catch ( IOException io ) {
@@ -169,7 +176,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
         }
     }
 
-    protected boolean findArduWindows() {
+    protected boolean findArduinoWindows() {
         try {
             String wmiValue = JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
             return wmiValue.contains("Arduino") || wmiValue.contains("USB Serial Port") || wmiValue.contains("USB Serial Device");

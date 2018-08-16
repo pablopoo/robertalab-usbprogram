@@ -1,4 +1,4 @@
-package de.fhg.iais.roberta.connection;
+package de.fhg.iais.roberta.connection.arduino;
 
 public enum ArduinoType {
     UNO ("Uno"),

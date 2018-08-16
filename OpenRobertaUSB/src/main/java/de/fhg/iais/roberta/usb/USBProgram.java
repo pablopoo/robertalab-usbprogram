@@ -1,8 +1,9 @@
 package de.fhg.iais.roberta.usb;
 
-import de.fhg.iais.roberta.connection.ArduinoUSBConnector;
-import de.fhg.iais.roberta.connection.BotnrollUSBConnector;
-import de.fhg.iais.roberta.connection.EV3USBConnector;
+import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
+import de.fhg.iais.roberta.connection.arduino.Bob3USBConnector;
+import de.fhg.iais.roberta.connection.arduino.BotnrollUSBConnector;
+import de.fhg.iais.roberta.connection.ev3.EV3USBConnector;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.ui.ConnectionView;
 import de.fhg.iais.roberta.ui.UIController;
@@ -28,7 +29,8 @@ public class USBProgram {
         connectorList = Arrays.<IConnector>asList(
             new EV3USBConnector(serverProps),
             new ArduinoUSBConnector(serverProps),
-            new BotnrollUSBConnector(serverProps));
+            new BotnrollUSBConnector(serverProps),
+            new Bob3USBConnector(serverProps));
     }
 
     private static final List<IConnector> connectorList;

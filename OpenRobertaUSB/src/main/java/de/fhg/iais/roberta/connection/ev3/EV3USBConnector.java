@@ -1,12 +1,14 @@
-package de.fhg.iais.roberta.connection;
+package de.fhg.iais.roberta.connection.ev3;
 
-import java.io.IOException;
-import java.util.ResourceBundle;
-
+import de.fhg.iais.roberta.connection.AbstractConnector;
+import de.fhg.iais.roberta.connection.IConnector;
+import de.fhg.iais.roberta.connection.ServerCommunicator;
+import de.fhg.iais.roberta.util.ORAtokenGenerator;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import de.fhg.iais.roberta.util.ORAtokenGenerator;
+import java.io.IOException;
+import java.util.ResourceBundle;
 
 /**
  * Intended to be used as Singleton(!). This class handles two connections:</br>
