@@ -56,6 +56,10 @@ public class ArduinoCommunicator extends AbstractArduinoCommunicator {
                     "-C" + this.avrConfPath,
                     "-P" + portPath + portName);
 
+            procBuilder.redirectInput(ProcessBuilder.Redirect.INHERIT);
+            procBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+            procBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+
             Process p = procBuilder.start();
             int ecode = p.waitFor();
             LOG.error("Exit code {}", ecode);

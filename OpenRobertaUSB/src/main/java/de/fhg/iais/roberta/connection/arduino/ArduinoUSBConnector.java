@@ -12,25 +12,37 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ArduinoUSBConnector extends AbstractConnector {
+
+    private final List<UsbDevice> supportedRobots;
+
     protected String portName = null;
 
     private AbstractArduinoCommunicator arducomm = null;
 
     public ArduinoUSBConnector(ResourceBundle serverProps) {
-        super(serverProps, "Arduino");
+        this(serverProps, "Arduino", Arrays.asList(
+            new UsbDevice("2341", "0043"), // Uno
+            new UsbDevice("2A03", "0043"), // Uno, different vendor
+            new UsbDevice("2341", "0042"), // Mega
+            new UsbDevice("0403", "6001")  // Nano, FT32R UART USB
+        ));
     }
 
-    protected ArduinoUSBConnector(ResourceBundle serverProps, String brickName) {
+    protected ArduinoUSBConnector(ResourceBundle serverProps, String brickName, List<UsbDevice> supportedRobots) {
         super(serverProps, brickName);
+
+        this.supportedRobots = supportedRobots;
     }
 
-    @Override
-    public boolean findRobot() {
+    @Override public boolean findRobot() {
         if ( SystemUtils.IS_OS_LINUX ) {
             return findArduinoLinux();
         } else if ( SystemUtils.IS_OS_WINDOWS ) {
@@ -46,8 +58,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
         return new ArduinoCommunicator(this.brickName);
     }
 
-    @Override
-    protected void runLoopBody() throws InterruptedException {
+    @Override protected void runLoopBody() throws InterruptedException {
         switch ( this.state ) {
             case DISCOVER:
                 try {
@@ -176,55 +187,69 @@ public class ArduinoUSBConnector extends AbstractConnector {
         }
     }
 
-    protected boolean findArduinoWindows() {
+    private boolean findArduinoWindows() {
         try {
-            String wmiValue = JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
-            return wmiValue.contains("Arduino") || wmiValue.contains("USB Serial Port") || wmiValue.contains("USB Serial Device");
+            for ( UsbDevice device : supportedRobots ) {
+                String
+                    ArduQueryResult =
+                    JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE PnPDeviceID "
+                            + "LIKE '%VID_" + device.vendorId + "%PID_" + device.productId + "%'",
+                        "Caption");
+                Matcher m = Pattern.compile(".*\\((COM.)\\)").matcher(ArduQueryResult);
+                if ( m.find() ) {
+                    this.portName = m.group(1);
+                    return true;
+                }
+            }
+            return false;
         } catch ( Exception e ) {
             LOG.error("Something went wrong when finding Arduinos: {}", e.getMessage());
             return false;
         }
     }
 
-    protected boolean findArduinoLinux() {
-        try {
-            File file = new File("/dev/serial/by-id/");
-            String[] directories = file.list();
-            for ( String directory : directories ) {
-                if ( directory.matches(".*Arduino.*") || directory.matches(".*FT232R_USB_UART.*") ) {
-                    return true;
+    private boolean findArduinoLinux() {
+        File devices = new File("/sys/bus/usb/devices");
+
+        // check every usb device
+        for ( File devicesDirectories : devices.listFiles() ) {
+            File idVendorFile = new File(devicesDirectories, "idVendor");
+            File idProductFile = new File(devicesDirectories, "idProduct");
+
+            // if the id files exist check the content
+            if ( idVendorFile.exists() && idProductFile.exists() ) {
+                try {
+                    String idVendor = Files.lines(idVendorFile.toPath()).findFirst().get();
+                    String idProduct = Files.lines(idProductFile.toPath()).findFirst().get();
+
+                    // see if the ids are supported
+                    if ( this.supportedRobots.contains(new UsbDevice(idVendor, idProduct)) ) {
+                        // recover the tty portname of the device
+                        // it can be found in the subdirectory with the same name as the device
+                        for ( File subdirectory : devicesDirectories.listFiles() ) {
+                            if ( subdirectory.getName().contains(devicesDirectories.getName()) ) {
+                                List<File> subsubdirs = Arrays.asList(subdirectory.listFiles());
+
+                                // look for a directory containing tty, in case its only called tty look into it to find the real name
+                                subsubdirs.stream()
+                                    .filter(s -> s.getName().contains("tty"))
+                                    .findFirst()
+                                    .ifPresent(f -> this.portName = f.getName().equals("tty") ? f.list()[0] : f.getName());
+                            }
+                        }
+                        return true;
+                    }
+                } catch ( IOException e ) {
+                    // continue if id files do not exist
                 }
             }
-            return false;
-        } catch ( RuntimeException e ) {
-            return false;
         }
+
+        return false;
     }
 
     protected void getPortName() throws Exception {
-        if ( SystemUtils.IS_OS_WINDOWS ) {
-            String ArduQueryResult = JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE Caption LIKE '%(COM%' ", "Caption");
-            Matcher m = Pattern.compile("(Arduino|USB Serial Port|USB Serial Device).*(\\(COM.\\))").matcher(ArduQueryResult);
-            while ( m.find() ) {
-                this.portName = m.group(2);
-            }
-
-        } else if ( SystemUtils.IS_OS_LINUX ) {
-            Runtime rt = Runtime.getRuntime();
-            Process pr = rt.exec("ls /dev/");
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()))) {
-
-                String line;
-                while ( (line = reader.readLine()) != null ) {
-                    Matcher m = Pattern.compile("(ttyACM|ttyUSB)").matcher(line);
-                    if ( m.find() ) {
-                        this.portName = line;
-                    }
-                }
-            }
-
-        } else if ( SystemUtils.IS_OS_MAC_OSX ) {
+        if ( SystemUtils.IS_OS_MAC_OSX ) {
             Runtime rt = Runtime.getRuntime();
             Process pr = rt.exec("ls /dev/");
 
