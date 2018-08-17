@@ -5,16 +5,19 @@ import de.fhg.iais.roberta.ui.UIController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 
 public class SerialLoggingTask implements Callable<Void> {
     private static final Logger LOG = LoggerFactory.getLogger(SerialLoggingTask.class);
 
     private UIController uiController;
+    private String port;
     private int serialRate;
 
-    public SerialLoggingTask(UIController uiController, int serialRate) {
+    public SerialLoggingTask(UIController uiController, String port, int serialRate) {
         this.uiController = uiController;
+        this.port = port;
         this.serialRate = serialRate;
     }
 
@@ -22,8 +25,8 @@ public class SerialLoggingTask implements Callable<Void> {
     @Override
     public Void call() {
         SerialPort[] serialPorts = SerialPort.getCommPorts();
-        SerialPort comPort = serialPorts[0];
-        comPort.setBaudRate(serialRate);
+        SerialPort comPort = Arrays.stream(serialPorts).filter(serialPort -> serialPort.getSystemPortName().contains(this.port)).findFirst().get();
+        comPort.setBaudRate(this.serialRate);
         comPort.openPort();
         LOG.debug("SerialPort {} {} {} opened, logging with baud rate of {}", comPort.getSystemPortName(), comPort.getDescriptivePortName(), comPort.getPortDescription(), comPort.getBaudRate());
         while(!Thread.currentThread().isInterrupted()) {

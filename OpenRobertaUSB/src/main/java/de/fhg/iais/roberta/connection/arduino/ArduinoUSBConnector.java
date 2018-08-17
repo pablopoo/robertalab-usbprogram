@@ -248,6 +248,10 @@ public class ArduinoUSBConnector extends AbstractConnector {
         return false;
     }
 
+    public String getPort() {
+        return this.portName;
+    }
+
     protected void getPortName() throws Exception {
         if ( SystemUtils.IS_OS_MAC_OSX ) {
             Runtime rt = Runtime.getRuntime();

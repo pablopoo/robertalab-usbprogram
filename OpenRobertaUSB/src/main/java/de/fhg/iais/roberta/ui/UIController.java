@@ -3,6 +3,7 @@ package de.fhg.iais.roberta.ui;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.connection.IConnector.State;
 import de.fhg.iais.roberta.connection.SerialLoggingTask;
+import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,11 @@ public class UIController implements Observer {
         this.conView.hideRobotList();
         this.connector = usbCon;
         ((Observable) this.connector).addObserver(this);
+
+        if (usbCon.getBrickName().equals("Arduino")) {
+            this.conView.showArduinoMenu();
+        }
+
         LOG.info("GUI setup done. Using {}", usbCon.getClass().getSimpleName());
     }
 
@@ -205,6 +211,7 @@ public class UIController implements Observer {
 
     public void showSerialMonitor() {
         LOG.debug("showSerialMonitor");
+
         this.serialMonitor = new SerialMonitor(this.rb, new SerialMonitorListener(this));
         this.serialMonitor.setVisible(true);
 
@@ -213,15 +220,17 @@ public class UIController implements Observer {
 
     public void restartSerialLogging() {
         stopSerialLogging();
-        this.serialLoggingFuture = this.executorService.submit(new SerialLoggingTask(this, this.serialMonitor.getSerialRate()));
+
+        if (this.connector instanceof ArduinoUSBConnector) {
+            this.serialLoggingFuture = this.executorService.submit(
+                new SerialLoggingTask(this,
+                    ((ArduinoUSBConnector) this.connector).getPort(),
+                    this.serialMonitor.getSerialRate()));
+        }
     }
 
     public void appendSerial(final byte[] readBuffer) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override public void run() {
-                UIController.this.serialMonitor.appendText(readBuffer);
-            }
-        });
+        SwingUtilities.invokeLater(() -> this.serialMonitor.appendText(readBuffer));
     }
 
     public void clearSerialLog() {

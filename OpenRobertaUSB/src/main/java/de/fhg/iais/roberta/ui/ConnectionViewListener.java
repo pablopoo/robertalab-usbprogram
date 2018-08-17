@@ -31,8 +31,8 @@ public class ConnectionViewListener extends WindowAdapter implements ActionListe
         } else if ( button.getActionCommand().equals("customaddress") ) {
             LOG.debug("User custom address");
             this.uiController.showAdvancedOptions();
-        } else if ( button.getActionCommand().equals("back") ) {
-            LOG.debug("User back");
+        } else if ( button.getActionCommand().equals("scan") ) {
+            LOG.debug("User scan");
             USBProgram.stopConnector();
             this.uiController.setDiscover();
         } else if ( button.getActionCommand().equals("serial")) {

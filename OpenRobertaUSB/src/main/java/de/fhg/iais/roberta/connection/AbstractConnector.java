@@ -39,7 +39,7 @@ public abstract class AbstractConnector extends Observable implements IConnector
         LOG.info("Server address {}", this.serverAddress);
         while(!Thread.currentThread().isInterrupted()) {
             try {
-                LOG.debug("{} is running! ", Thread.currentThread().getName());
+//                LOG.debug("{} is running! ", Thread.currentThread().getName());
                 runLoopBody();
             } catch (InterruptedException e) {
                 reset(null);

@@ -82,7 +82,7 @@ public class ConnectionView extends JFrame {
 
     private final JPanel pnlButton = new JPanel();
     private final ORAToggleButton butConnect = new ORAToggleButton();
-    private final ORAToggleButton butBack = new ORAToggleButton();
+    private final ORAToggleButton butScan = new ORAToggleButton();
     private final ORAButton butClose = new ORAButton();
 
     // Custom panel
@@ -154,9 +154,9 @@ public class ConnectionView extends JFrame {
 
         // Arduino
         this.menu.add(this.menuArduino);
-        this.menuArduino.setText("Arduino"); //TODO
+        this.menuArduino.setText("Arduino");
         this.menuArduino.add(this.menuItemSerial);
-        this.menuItemSerial.setText("Serial"); //TODO
+        this.menuItemSerial.setText("Serial Monitor");
         this.menuItemSerial.setActionCommand("serial");
 
         this.menu.add(Box.createHorizontalGlue());
@@ -217,9 +217,9 @@ public class ConnectionView extends JFrame {
         this.pnlButton.add(this.butConnect);
 
         this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
-        this.pnlButton.add(this.butBack);
-        this.butBack.setText(this.messages.getString("back"));
-        this.butBack.setActionCommand("back");
+        this.pnlButton.add(this.butScan);
+        this.butScan.setText(this.messages.getString("scan"));
+        this.butScan.setActionCommand("scan");
 
         this.pnlButton.add(Box.createRigidArea(new Dimension(12,0)));
         this.pnlButton.add(this.butClose);
@@ -285,6 +285,7 @@ public class ConnectionView extends JFrame {
 
         this.hideRobotList();
         this.hideCustom();
+        this.hideArduinoMenu();
     }
 
     private void hideCustom() {
@@ -302,7 +303,7 @@ public class ConnectionView extends JFrame {
         this.menuItemAbout.addActionListener(listener);
         this.menuItemSerial.addActionListener(listener);
         this.butConnect.addActionListener(listener);
-        this.butBack.addActionListener(listener);
+        this.butScan.addActionListener(listener);
         this.butClose.addActionListener(listener);
         this.checkCustom.addActionListener(listener);
     }
@@ -314,7 +315,7 @@ public class ConnectionView extends JFrame {
     public void setWaitForConnect() {
         this.lblRobot.setIcon(this.icoRobotDiscovered);
         this.butConnect.setEnabled(true);
-        this.butBack.setEnabled(true);
+        this.butScan.setEnabled(true);
         this.txtAreaInfo.setText(this.messages.getString("connectInfo"));
         this.lblMainGif.setIcon(this.gifConnect);
     }
@@ -343,10 +344,11 @@ public class ConnectionView extends JFrame {
         this.butConnect.setText(this.messages.getString("connect"));
         this.butConnect.setSelected(false);
         this.butConnect.setEnabled(false);
-        this.butBack.setEnabled(false);
-        this.butBack.setSelected(false);
+        this.butScan.setEnabled(false);
+        this.butScan.setSelected(false);
         this.txtAreaInfo.setText(this.messages.getString("plugInInfo"));
         this.lblMainGif.setIcon(this.gifPlug);
+        this.hideArduinoMenu();
     }
 
     public void setWaitForServer() {
@@ -355,7 +357,7 @@ public class ConnectionView extends JFrame {
     }
 
     public void setNew(String token) {
-        this.butBack.setEnabled(false);
+        this.butScan.setEnabled(false);
         this.txtFldToken.setText(token);
         this.txtAreaInfo.setText(this.messages.getString("tokenInfo"));
         this.lblMainGif.setIcon(this.gifServer);
@@ -370,6 +372,14 @@ public class ConnectionView extends JFrame {
     public void hideRobotList() {
         this.lblSelection.setVisible(false);
         this.listRobots.setVisible(false);
+    }
+
+    public void showArduinoMenu() {
+        this.menuArduino.setVisible(true);
+    }
+
+    public void hideArduinoMenu() {
+        this.menuArduino.setVisible(false);
     }
 
     public String getSelectedRobot() {

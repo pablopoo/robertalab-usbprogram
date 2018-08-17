@@ -70,7 +70,7 @@ public class USBProgram {
                     if(connectorShouldStop) {
                         connectorFuture.cancel(true);
                     }
-                    Thread.sleep(2000);
+                    Thread.sleep(1000);
                 }
                 connectorShouldStop = false;
                 LOG.info("Connector finished!");
