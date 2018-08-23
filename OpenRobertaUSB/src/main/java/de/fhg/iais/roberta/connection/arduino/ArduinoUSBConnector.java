@@ -56,7 +56,15 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
     @Override
     protected void runLoopBody() throws InterruptedException {
-        switch (this.state) {
+        if (!findRobot()) {
+            LOG.debug("robot disconnected");
+            if ( this.state == State.WAIT_FOR_CMD ) {
+                userPressDisconnectButton();
+            }
+            Thread.currentThread().interrupt();
+        }
+
+        switch ( this.state ) {
             case DISCOVER:
                 if (this.portName.isEmpty()) {
                     LOG.info("No Arduino device connected");
