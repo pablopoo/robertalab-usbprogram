@@ -23,9 +23,9 @@ public class ArduinoCommunicator extends AbstractArduinoCommunicator {
     public JSONObject getDeviceInfo() {
         JSONObject deviceInfo = new JSONObject();
 
-        deviceInfo.put("firmwarename", "Arduino");
-        deviceInfo.put("robot", "ardu");
-        deviceInfo.put("brickname", this.brickName);
+        deviceInfo.put("firmwarename", this.type.toString().toLowerCase());
+        deviceInfo.put("robot", this.type.toString().toLowerCase());
+        deviceInfo.put("brickname", this.brickName.toLowerCase());
 
         return deviceInfo;
     }

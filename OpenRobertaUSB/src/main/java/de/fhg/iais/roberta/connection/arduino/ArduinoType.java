@@ -1,9 +1,9 @@
 package de.fhg.iais.roberta.connection.arduino;
 
 public enum ArduinoType {
-    UNO ("Uno"),
-    MEGA ("Mega"),
-    NANO ("Nano");
+    UNO ("uno"),
+    MEGA ("mega"),
+    NANO ("nano");
 
     private final String text;
 

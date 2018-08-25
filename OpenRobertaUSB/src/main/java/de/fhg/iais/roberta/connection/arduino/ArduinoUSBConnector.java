@@ -23,12 +23,15 @@ public class ArduinoUSBConnector extends AbstractConnector {
     private AbstractArduinoCommunicator arducomm = null;
 
     public ArduinoUSBConnector(ResourceBundle serverProps) {
-        this(serverProps, "Arduino", Arrays.asList(
+        this(
+            serverProps,
+            "Arduino",
+            Arrays.asList(
                 new UsbDevice("2341", "0043"), // Uno
                 new UsbDevice("2A03", "0043"), // Uno, different vendor
                 new UsbDevice("2341", "0042"), // Mega
-                new UsbDevice("0403", "6001")  // Nano, FT32R UART USB
-        ));
+                new UsbDevice("0403", "6001") // Nano, FT32R UART USB
+            ));
     }
 
     protected ArduinoUSBConnector(ResourceBundle serverProps, String brickName, List<UsbDevice> supportedRobots) {
@@ -39,11 +42,11 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
     @Override
     public boolean findRobot() {
-        if (SystemUtils.IS_OS_LINUX) {
+        if ( SystemUtils.IS_OS_LINUX ) {
             return findArduinoLinux();
-        } else if (SystemUtils.IS_OS_WINDOWS) {
+        } else if ( SystemUtils.IS_OS_WINDOWS ) {
             return findArduinoWindows();
-        } else if (SystemUtils.IS_OS_MAC_OSX) {
+        } else if ( SystemUtils.IS_OS_MAC_OSX ) {
             return findArduinoMac();
         } else {
             return false;
@@ -56,9 +59,9 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
     @Override
     protected void runLoopBody() throws InterruptedException {
-        switch (this.state) {
+        switch ( this.state ) {
             case DISCOVER:
-                if (this.portName.isEmpty()) {
+                if ( this.portName.isEmpty() ) {
                     LOG.info("No Arduino device connected");
                     Thread.sleep(1000);
                 } else {
@@ -91,7 +94,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 try {
                     JSONObject serverResponse = this.servcomm.pushRequest(this.brickData);
                     String command = serverResponse.getString("cmd");
-                    switch (command) {
+                    switch ( command ) {
                         case CMD_REPEAT:
                             this.state = State.WAIT_FOR_CMD;
                             notifyConnectionStateChanged(this.state);
@@ -105,7 +108,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                         default:
                             throw new RuntimeException("Unexpected command " + command + "from server");
                     }
-                } catch (IOException | RuntimeException io) {
+                } catch ( IOException | RuntimeException io ) {
                     LOG.info("CONNECT {}", io.getMessage());
                     reset(State.ERROR_HTTP);
                 }
@@ -117,9 +120,9 @@ public class ArduinoUSBConnector extends AbstractConnector {
                 try {
                     JSONObject response = this.servcomm.pushRequest(this.brickData);
                     String cmdKey = response.getString(KEY_CMD);
-                    if (cmdKey.equals(CMD_REPEAT)) {
+                    if ( cmdKey.equals(CMD_REPEAT) ) {
                         break;
-                    } else if (cmdKey.equals(CMD_DOWNLOAD)) {
+                    } else if ( cmdKey.equals(CMD_DOWNLOAD) ) {
                         LOG.info("Download user program");
                         try {
                             byte[] binaryfile = this.servcomm.downloadProgram(this.brickData);
@@ -128,7 +131,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
                             temp.deleteOnExit();
 
-                            if (!temp.exists()) {
+                            if ( !temp.exists() ) {
                                 throw new FileNotFoundException("File " + temp.getAbsolutePath() + " does not exist.");
                             }
 
@@ -136,25 +139,24 @@ public class ArduinoUSBConnector extends AbstractConnector {
                                 os.write(binaryfile);
                             }
 
-                            if (this.brickName.equals("Arduino")) {
-                                this.arducomm.setType(ArduinoType.fromString(response.getString(KEY_SUBTYPE)));
-                            }
+                            this.arducomm.setType(ArduinoType.fromString(response.getString(KEY_SUBTYPE).toLowerCase()));
+
                             this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
                             this.state = State.WAIT_EXECUTION;
-                        } catch (IOException io) {
+                        } catch ( IOException io ) {
                             LOG.info("Download and run failed: {}", io.getMessage());
                             LOG.info("Do not give up yet - make the next push request");
                             this.state = State.WAIT_FOR_CMD;
 
                         }
-                    } else if (cmdKey.equals(CMD_CONFIGURATION)) {
+                    } else if ( cmdKey.equals(CMD_CONFIGURATION) ) {
                         LOG.info("Configuration");
-                    } else if (cmdKey.equals(CMD_UPDATE)) {
+                    } else if ( cmdKey.equals(CMD_UPDATE) ) {
                         LOG.info("Firmware updated not necessary and not supported!");// LOG and go to abort
-                    } else if (cmdKey.equals(CMD_ABORT)) {
+                    } else if ( cmdKey.equals(CMD_ABORT) ) {
                         throw new RuntimeException("Unexpected response from server");
                     }
-                } catch (RuntimeException | IOException r) {
+                } catch ( RuntimeException | IOException r ) {
                     LOG.info("WAIT_FOR_CMD {}", r.getMessage());
                     reset(State.ERROR_HTTP);
                 }
@@ -167,31 +169,36 @@ public class ArduinoUSBConnector extends AbstractConnector {
     protected boolean findArduinoMac() {
         try {
             Runtime rt = Runtime.getRuntime();
-            String commands[] = {"/bin/sh", "-c", "system_profiler SPUSBDataType" +
-                    "    | awk '" +
-                    "      /Product ID:/{p=$3}" +
-                    "      /Vendor ID:/{v=$3}" +
-                    "      /Manufacturer:/{sub(/.*: /,\"\"); m=$0}" +
-                    "      /Location ID:/{sub(/.*: /,\"\"); printf(\"%s:%s %s (%s)\\n\", v, p, $0, m);}" +
-                    "    '"};
+            String commands[] =
+                {
+                    "/bin/sh",
+                    "-c",
+                    "system_profiler SPUSBDataType"
+                        + "    | awk '"
+                        + "      /Product ID:/{p=$3}"
+                        + "      /Vendor ID:/{v=$3}"
+                        + "      /Manufacturer:/{sub(/.*: /,\"\"); m=$0}"
+                        + "      /Location ID:/{sub(/.*: /,\"\"); printf(\"%s:%s %s (%s)\\n\", v, p, $0, m);}"
+                        + "    '"
+                };
             Process pr = rt.exec(commands);
 
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()))) {
                 String line;
-                while ((line = reader.readLine()) != null) {
-                    for (UsbDevice device : supportedRobots) {
+                while ( (line = reader.readLine()) != null ) {
+                    for ( UsbDevice device : supportedRobots ) {
                         // search the device in the commands output
                         Matcher m = Pattern.compile("(?i)0x" + device.vendorId + ":0x" + device.productId + " 0x(\\d{3}).* \\/").matcher(line);
-                        if (m.find()) {
+                        if ( m.find() ) {
                             // the corresponding tty ID seems to be the third hex number
                             // TODO do better, this is just an ugly workaround that always takes the first tty.usbserial
                             // TODO i do not know any way to correlate the unique id of the port to the device
-                            if (device.vendorId.equalsIgnoreCase("0403") && device.productId.equalsIgnoreCase("6001")) {
+                            if ( device.vendorId.equalsIgnoreCase("0403") && device.productId.equalsIgnoreCase("6001") ) {
                                 Process devPr = rt.exec("ls /dev/");
                                 try (BufferedReader devReader = new BufferedReader(new InputStreamReader(devPr.getInputStream()))) {
                                     String devFolder;
-                                    while ((devFolder = devReader.readLine()) != null) {
-                                        if (devFolder.contains("tty.usbserial")) {
+                                    while ( (devFolder = devReader.readLine()) != null ) {
+                                        if ( devFolder.contains("tty.usbserial") ) {
                                             this.portName = devFolder;
                                             LOG.info("Found robot: {}:{}, using portname {}", device.vendorId, device.productId, this.portName);
                                             return true;
@@ -206,7 +213,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch ( IOException e ) {
             return false;
         }
         return false;
@@ -214,21 +221,20 @@ public class ArduinoUSBConnector extends AbstractConnector {
 
     private boolean findArduinoWindows() {
         try {
-            for (UsbDevice device : supportedRobots) {
-                String
-                        ArduQueryResult =
-                        JWMI.getWMIValue("SELECT * FROM Win32_PnPEntity WHERE PnPDeviceID "
-                                        + "LIKE '%VID_" + device.vendorId + "%PID_" + device.productId + "%'",
-                                "Caption");
+            for ( UsbDevice device : supportedRobots ) {
+                String ArduQueryResult =
+                    JWMI.getWMIValue(
+                        "SELECT * FROM Win32_PnPEntity WHERE PnPDeviceID " + "LIKE '%VID_" + device.vendorId + "%PID_" + device.productId + "%'",
+                        "Caption");
                 Matcher m = Pattern.compile(".*\\((COM.)\\)").matcher(ArduQueryResult);
-                if (m.find()) {
+                if ( m.find() ) {
                     this.portName = m.group(1);
                     LOG.info("Found robot: {}:{}, using portname {}", device.vendorId, device.productId, this.portName);
                     return true;
                 }
             }
             return false;
-        } catch (Exception e) {
+        } catch ( Exception e ) {
             LOG.error("Something went wrong when finding Arduinos: {}", e.getMessage());
             return false;
         }
@@ -238,35 +244,33 @@ public class ArduinoUSBConnector extends AbstractConnector {
         File devices = new File("/sys/bus/usb/devices");
 
         // check every usb device
-        for (File devicesDirectories : devices.listFiles()) {
+        for ( File devicesDirectories : devices.listFiles() ) {
             File idVendorFile = new File(devicesDirectories, "idVendor");
             File idProductFile = new File(devicesDirectories, "idProduct");
 
             // if the id files exist check the content
-            if (idVendorFile.exists() && idProductFile.exists()) {
+            if ( idVendorFile.exists() && idProductFile.exists() ) {
                 try {
                     String idVendor = Files.lines(idVendorFile.toPath()).findFirst().get();
                     String idProduct = Files.lines(idProductFile.toPath()).findFirst().get();
 
                     // see if the ids are supported
-                    if (this.supportedRobots.contains(new UsbDevice(idVendor, idProduct))) {
+                    if ( this.supportedRobots.contains(new UsbDevice(idVendor, idProduct)) ) {
                         // recover the tty portname of the device
                         // it can be found in the subdirectory with the same name as the device
-                        for (File subdirectory : devicesDirectories.listFiles()) {
-                            if (subdirectory.getName().contains(devicesDirectories.getName())) {
+                        for ( File subdirectory : devicesDirectories.listFiles() ) {
+                            if ( subdirectory.getName().contains(devicesDirectories.getName()) ) {
                                 List<File> subsubdirs = Arrays.asList(subdirectory.listFiles());
 
                                 // look for a directory containing tty, in case its only called tty look into it to find the real name
-                                subsubdirs.stream()
-                                        .filter(s -> s.getName().contains("tty"))
-                                        .findFirst()
-                                        .ifPresent(f -> this.portName = f.getName().equals("tty") ? f.list()[0] : f.getName());
+                                subsubdirs.stream().filter(s -> s.getName().contains("tty")).findFirst().ifPresent(
+                                    f -> this.portName = f.getName().equals("tty") ? f.list()[0] : f.getName());
                             }
                         }
                         LOG.info("Found robot: {}:{}, using portname {}", idVendor, idProduct, this.portName);
                         return true;
                     }
-                } catch (IOException e) {
+                } catch ( IOException e ) {
                     // continue if id files do not exist
                 }
             }
