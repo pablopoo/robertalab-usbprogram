@@ -52,16 +52,22 @@ Linux:
 - run `tar -zcvf OpenRobertaUSBLinux-X.X.X.tar.gz OpenRobertaUSB` with correct version
 
 Windows:
-- run `mvn clean install` in the OpenRobertaUSB directory
 - download [WiX Toolset](https://github.com/wixtoolset/wix3/releases)
 - download [WDK 8.1](https://www.microsoft.com/en-us/download/details.aspx?id=42273)
-- (change )
-- go to the installation directory of WDK (usually `C:\Program Files(x86)\Windows Kits\8.1`)
-- go to `redist\DIFx` and copy the `dpinst` folder to the `USBInstaller\Windows` directory
+- run `mvn clean install` in the `OpenRobertaUSB` directory
+- change version in `setup.wxs` (optionally change WDK path, if non default was used)
 - run `build.bat`
 - add version number to resulting `.msi` files
 
-Mac:
+Mac (this method is really weird, but it works for now):
+- run `mvn clean install`
+- go to the `USBInstaller/OSX` directory and run `pkgbuild --root root --identifier de.fraunhofer.iais.roberta.OpenRobertaUSB USB.pkg`
+- expand the package with `pkgutil --expand USB.pkg ORUSB.pkg`
+- download one of the older [releases](https://github.com/OpenRoberta/robertalab-usbprogram/releases)
+- expand the downloaded pkg with `pkgutil --expand OpenRobertaUSBMacOSX-X.X.X USB`
+- change the version & size in the `Distribution` file
+- replace `ORUSB.pkg` with the newly built one from `USBInstaller/OSX`
+- flatten the package with `pkgutil --flatten USB OpenRobertaUSBMacOSX-X.X.X.pkg`
 
 
 ### Third party libraries
