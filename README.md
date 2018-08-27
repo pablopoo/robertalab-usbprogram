@@ -44,6 +44,25 @@ branch.
     git clone git://github.com/OpenRoberta/robertalab-usbprogram.git
     cd robertalab-usbprogram
     git checkout -b develop origin/develop
+    
+### Installer creation
+Linux:
+- run `mvn clean install` in the `OpenRobertaUSB` directory
+- go to `USBInstaller` directory and duplicate the `Linux` directory with `cp -R Linux OpenRobertaUSB`
+- run `tar -zcvf OpenRobertaUSBLinux-X.X.X.tar.gz OpenRobertaUSB` with correct version
+
+Windows:
+- run `mvn clean install` in the OpenRobertaUSB directory
+- download [WiX Toolset](https://github.com/wixtoolset/wix3/releases)
+- download [WDK 8.1](https://www.microsoft.com/en-us/download/details.aspx?id=42273)
+- (change )
+- go to the installation directory of WDK (usually `C:\Program Files(x86)\Windows Kits\8.1`)
+- go to `redist\DIFx` and copy the `dpinst` folder to the `USBInstaller\Windows` directory
+- run `build.bat`
+- add version number to resulting `.msi` files
+
+Mac:
+
 
 ### Third party libraries
 

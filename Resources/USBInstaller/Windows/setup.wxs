@@ -6,6 +6,7 @@
 	<?define ProductCode="05780FA2-4F8F-49E2-8015-A7EEE519B4CD"?>
 	<?define Manufacturer="Fraunhofer IAIS"?>
 	<?define PackageCode="A45EC15C-77CE-48D4-B923-C5BE98E8B3E9"?>
+    <?define WDKDirectory="C:\Program Files(x86)\Windows Kits\8.1\"?>
 
 
 	<Product
@@ -49,17 +50,17 @@ Property="UPGRADEFOUND" />
         <WixVariable Id="WixUIDialogBmp" Value="Resources_installer\ORDialog.bmp" />
 		<WixVariable Id="WixUIInfoIco" Value="Resources_installer\warning-outline.ico" />
 		<WixVariable Id="WixUIExclamationIco" Value="Resources_installer\warning-outline.ico" />
-			<Directory Id="TARGETDIR" Name="SourceDir">	
+		<Directory Id="TARGETDIR" Name="SourceDir">	
 			<Directory Id="ProgramFilesFolder">			
 				<Directory Id="INSTALLDIR" Name="OpenRoberta">
 					<Directory Id="RESOURCES" Name="resources"/>				
 					<Directory Id="Drivers" Name="Drivers">
-						<Component Id="DPInst_x32" Guid="9BC0F448-32B2-4A21-8C46-76742266D829">
-							<File Id="DPInst.exe_x32" Name="DPInst.exe" Vital="yes" DiskId="1"  Source="DPInst\x32\DPInst.exe" />
+						<Component Id="DPInst_x86" Guid="9BC0F448-32B2-4A21-8C46-76742266D829">
+							<File Id="DPInst.exe_x86" Name="DPInst.exe" Vital="yes" DiskId="1"  Source="$(var.WDKDirectory)\redist\DIFx\dpinst\MultiLin\x86\dpinst.exe" />
 							<Condition>NOT VersionNT64</Condition>
 						</Component>
 						<Component Id="DPInst_x64" Guid="A77003C1-4A11-4B0C-A47B-40EDFF66EE29">
-							<File Id="DPInst.exe_x64" Name="DPInst.exe" Vital="yes" DiskId="1"  Source="DPInst\x64\DPInst.exe" />
+							<File Id="DPInst.exe_x64" Name="DPInst.exe" Vital="yes" DiskId="1"  Source="$(var.WDKDirectory)\redist\DIFx\dpinst\MultiLin\x64\dpinst.exe" />
 							<Condition>VersionNT64</Condition>
 						</Component>
 						<Component Id="rndiscmp" DiskId="1" Guid="7D591605-AC6C-444D-A692-4D35EDDCAF91">
@@ -96,8 +97,8 @@ Property="UPGRADEFOUND" />
 				Display="expand" ConfigurableDirectory="INSTALLDIR">
 			
 			<Feature Id="Drivers" Level="1" AllowAdvertise="no" ConfigurableDirectory="TARGETDIR" Description="Drivers"  Title="Drivers" >
-				<Feature Id='DPInst_x32' Level='0' AllowAdvertise="no" Absent="disallow" Display="hidden">
-					<ComponentRef Id='DPInst_x32' />
+				<Feature Id='DPInst_x86' Level='0' AllowAdvertise="no" Absent="disallow" Display="hidden">
+					<ComponentRef Id='DPInst_x86' />
 					<Condition Level="1">NOT VersionNT64</Condition>
 				</Feature>
 				<Feature Id='DPInst_x64' Level='0' AllowAdvertise="no" Absent="disallow" >
