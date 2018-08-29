@@ -20,6 +20,7 @@ public class ArduinoCommunicator extends AbstractArduinoCommunicator {
         this.type = type;
     }
 
+    @Override
     public JSONObject getDeviceInfo() {
         JSONObject deviceInfo = new JSONObject();
 
@@ -30,6 +31,7 @@ public class ArduinoCommunicator extends AbstractArduinoCommunicator {
         return deviceInfo;
     }
 
+    @Override
     public void uploadFile(String portName, String filePath) {
         setParameters();
         String portPath = "/dev/";
@@ -62,7 +64,7 @@ public class ArduinoCommunicator extends AbstractArduinoCommunicator {
 
             Process p = procBuilder.start();
             int ecode = p.waitFor();
-            LOG.error("Exit code {}", ecode);
+            LOG.debug("Exit code {}", ecode);
         } catch ( IOException | InterruptedException e ) {
             LOG.error("Error while uploading to arduino: {}", e.getMessage());
         }

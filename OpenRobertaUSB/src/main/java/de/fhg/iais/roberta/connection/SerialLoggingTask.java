@@ -27,8 +27,8 @@ public class SerialLoggingTask implements Callable<Void> {
         SerialPort[] serialPorts = SerialPort.getCommPorts();
         SerialPort comPort = Arrays.stream(serialPorts).filter(serialPort -> serialPort.getSystemPortName().contains(this.port)).findFirst().get();
         comPort.setBaudRate(this.serialRate);
-        comPort.openPort();
-        LOG.debug("SerialPort {} {} {} opened, logging with baud rate of {}", comPort.getSystemPortName(), comPort.getDescriptivePortName(), comPort.getPortDescription(), comPort.getBaudRate());
+        comPort.openPort(0);
+        LOG.info("SerialPort {} {} {} opened, logging with baud rate of {}", comPort.getSystemPortName(), comPort.getDescriptivePortName(), comPort.getPortDescription(), comPort.getBaudRate());
         while(!Thread.currentThread().isInterrupted()) {
             try {
                 while (comPort.bytesAvailable() == 0) {

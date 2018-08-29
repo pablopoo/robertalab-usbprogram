@@ -1,13 +1,6 @@
 package de.fhg.iais.roberta.ui;
 
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.ScrollPaneConstants;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -32,6 +25,7 @@ public class SerialMonitor extends JFrame {
         this.addWindowListener(listener);
 
         // Titlebar
+        this.setIconImage(new ImageIcon(getClass().getClassLoader().getResource("images/OR.png")).getImage());
         this.setTitle("Serial Monitor");
 
         this.add(this.scrollPane, BorderLayout.CENTER);

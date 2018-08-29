@@ -139,10 +139,15 @@ public class ArduinoUSBConnector extends AbstractConnector {
                                 os.write(binaryfile);
                             }
 
-                            this.arducomm.setType(ArduinoType.fromString(response.getString(KEY_SUBTYPE).toLowerCase()));
+                            if (this.arducomm instanceof ArduinoCommunicator) {
+                                this.arducomm.setType(ArduinoType.fromString(response.getString(KEY_SUBTYPE).toLowerCase()));
+                            }
 
+                            this.state = State.WAIT_UPLOAD;
+                            notifyConnectionStateChanged(this.state);
                             this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
                             this.state = State.WAIT_EXECUTION;
+                            notifyConnectionStateChanged(this.state);
                         } catch ( IOException io ) {
                             LOG.info("Download and run failed: {}", io.getMessage());
                             LOG.info("Do not give up yet - make the next push request");

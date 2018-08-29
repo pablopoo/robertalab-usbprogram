@@ -16,6 +16,7 @@ public interface IConnector extends Callable<Boolean> {
         WAIT_FOR_CONNECT_BUTTON_PRESS,
         CONNECT_BUTTON_IS_PRESSED,
         WAIT_FOR_CMD,
+        WAIT_UPLOAD,
         WAIT_EXECUTION,
         DISCONNECT,
         WAIT_FOR_SERVER,

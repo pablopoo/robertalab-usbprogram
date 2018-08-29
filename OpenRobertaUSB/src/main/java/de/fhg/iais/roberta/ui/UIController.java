@@ -30,7 +30,7 @@ public class UIController implements Observer {
     private final ResourceBundle rb;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private SerialMonitor serialMonitor;
+    private final SerialMonitor serialMonitor;
     private Future<Void> serialLoggingFuture;
 
     public UIController(ConnectionView conView, ResourceBundle rb) {
@@ -42,6 +42,9 @@ public class UIController implements Observer {
         ConnectionViewListener listener = new ConnectionViewListener(this);
         this.conView.setWindowListener(listener);
         this.conView.setConnectActionListener(listener);
+
+        this.serialMonitor = new SerialMonitor(this.rb, new SerialMonitorListener(this));
+        this.serialMonitor.setVisible(false);
     }
 
     public void setConnectorMap(List<IConnector> connectorList) {
@@ -66,10 +69,6 @@ public class UIController implements Observer {
         this.conView.hideRobotList();
         this.connector = usbCon;
         ((Observable) this.connector).addObserver(this);
-
-        if (usbCon.getBrickName().equals("Arduino")) {
-            this.conView.showArduinoMenu();
-        }
 
         LOG.info("GUI setup done. Using {}", usbCon.getClass().getSimpleName());
     }
@@ -155,6 +154,11 @@ public class UIController implements Observer {
                 //this.conView.setNew(this.connector.getBrickName());
                 this.connected = false;
                 this.conView.setWaitForConnect();
+
+                if (connector instanceof ArduinoUSBConnector) {
+                    this.conView.showArduinoMenu();
+                }
+
                 break;
             case WAIT_FOR_SERVER:
                 this.conView.setNew(this.rb.getString("token") + ' ' + this.connector.getToken());
@@ -171,8 +175,14 @@ public class UIController implements Observer {
                 this.connected = false;
                 this.conView.setDiscover();
                 break;
+            case WAIT_UPLOAD:
+                stopSerialLogging();
+                break;
             case WAIT_EXECUTION:
                 this.conView.setWaitExecution();
+                if (this.serialMonitor.isVisible()) {
+                    restartSerialLogging();
+                }
                 break;
             case UPDATE_SUCCESS:
                 ORAPopup.showPopup(this.conView, this.rb.getString("attention"), this.rb.getString("restartInfo"), null);
@@ -212,15 +222,16 @@ public class UIController implements Observer {
     public void showSerialMonitor() {
         LOG.debug("showSerialMonitor");
 
-        this.serialMonitor = new SerialMonitor(this.rb, new SerialMonitorListener(this));
         this.serialMonitor.setVisible(true);
 
         restartSerialLogging();
     }
 
     public void restartSerialLogging() {
+        LOG.debug("restartSerialLogging");
         stopSerialLogging();
 
+        // TODO improve
         if (this.connector instanceof ArduinoUSBConnector) {
             this.serialLoggingFuture = this.executorService.submit(
                 new SerialLoggingTask(this,
@@ -229,7 +240,7 @@ public class UIController implements Observer {
         }
     }
 
-    public void appendSerial(final byte[] readBuffer) {
+    public void appendSerial(byte[] readBuffer) {
         SwingUtilities.invokeLater(() -> this.serialMonitor.appendText(readBuffer));
     }
 
@@ -238,6 +249,7 @@ public class UIController implements Observer {
     }
 
     public void stopSerialLogging() {
+        LOG.debug("stopSerialLogging");
         if (this.serialLoggingFuture != null) {
             this.serialLoggingFuture.cancel(true);
         }
