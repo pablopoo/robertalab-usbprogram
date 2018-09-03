@@ -101,7 +101,7 @@
 				</includes>
 			</resource>
 			<resource>
-				<targetPath>${basedir}/../Resources/USBInstaller/OSX/root/Applications/OpenRobertaUSB.app/Contents/Resources/osx/arduino</targetPath>
+				<targetPath>${basedir}/../Resources/USBInstaller/OSX/Resources/osx/arduino</targetPath>
 				<directory>resources/osx/arduino</directory>
 				<includes>
 					<include>avrdude</include>
@@ -175,7 +175,7 @@
                         <configuration>
                             <target>
                                 <copy file="target/${project.artifactId}-${project.version}.jar" tofile="../Resources/USBInstaller/Linux/${project.artifactId}.jar"/>
-								<copy file="target/${project.artifactId}-${project.version}.jar" tofile="../Resources/USBInstaller/OSX/root/Applications/OpenRobertaUSB.app/Contents/${project.artifactId}.jar"/>
+								<copy file="target/${project.artifactId}-${project.version}.jar" tofile="../Resources/USBInstaller/OSX/${project.artifactId}.jar"/>
                             </target>
                         </configuration>
                         <goals>
