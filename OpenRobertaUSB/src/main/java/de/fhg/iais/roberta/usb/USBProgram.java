@@ -1,8 +1,6 @@
 package de.fhg.iais.roberta.usb;
 
 import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
-import de.fhg.iais.roberta.connection.arduino.Bob3USBConnector;
-import de.fhg.iais.roberta.connection.arduino.BotnrollUSBConnector;
 import de.fhg.iais.roberta.connection.ev3.EV3USBConnector;
 import de.fhg.iais.roberta.connection.IConnector;
 import de.fhg.iais.roberta.ui.ConnectionView;
@@ -26,11 +24,9 @@ public class USBProgram {
 
     static {
         ResourceBundle serverProps = ResourceBundle.getBundle("OpenRobertaUSB");
-        connectorList = Arrays.<IConnector>asList(
+        connectorList = Arrays.asList(
             new EV3USBConnector(serverProps),
-            new ArduinoUSBConnector(serverProps),
-            new BotnrollUSBConnector(serverProps),
-            new Bob3USBConnector(serverProps));
+            new ArduinoUSBConnector(serverProps));
     }
 
     private static final List<IConnector> connectorList;
@@ -40,13 +36,10 @@ public class USBProgram {
 
     public USBProgram() {
         try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                @Override
-                public void run() {
-                    ResourceBundle messages = getLocale();
-                    USBProgram.this.view = new ConnectionView(messages);
-                    USBProgram.this.controller = new UIController(USBProgram.this.view, messages);
-                }
+            SwingUtilities.invokeAndWait(() -> {
+                ResourceBundle messages = getLocale();
+                this.view = new ConnectionView(messages);
+                this.controller = new UIController(this.view, messages);
             });
         } catch ( InterruptedException | InvocationTargetException e ) {
             LOG.error("UI could not be set up");

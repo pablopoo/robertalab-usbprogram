@@ -6,55 +6,66 @@ import de.fhg.iais.roberta.util.ORAtokenGenerator;
 import org.apache.commons.lang3.SystemUtils;
 import org.json.JSONObject;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ArduinoUSBConnector extends AbstractConnector {
 
-    private final List<UsbDevice> supportedRobots;
-
-    protected String portName = null;
-
-    private AbstractArduinoCommunicator arducomm = null;
-
-    public ArduinoUSBConnector(ResourceBundle serverProps) {
-        this(
-            serverProps,
-            "Arduino",
-            Arrays.asList(
-                new UsbDevice("2341", "0043"), // Uno
-                new UsbDevice("2A03", "0043"), // Uno, different vendor
-                new UsbDevice("2341", "0042"), // Mega
-                new UsbDevice("0403", "6001") // Nano, FT32R UART USB
-            ));
+    private static final Map<UsbDevice, ArduinoType> supportedRobots;
+    static {
+        supportedRobots = new HashMap<>();
+        supportedRobots.put(new UsbDevice("2341", "0043"), ArduinoType.UNO); // Uno
+        supportedRobots.put(new UsbDevice("2A03", "0043"), ArduinoType.UNO); // Uno, different vendor
+        supportedRobots.put(new UsbDevice("2341", "0042"), ArduinoType.MEGA); // Mega
+        supportedRobots.put(new UsbDevice("0403", "6001"), ArduinoType.NANO); // Nano, FT32R UART USB)
+        supportedRobots.put(new UsbDevice("16C0", "0933"), ArduinoType.BOB3); // BOB3
+        supportedRobots.put(new UsbDevice("10C4", "EA60"), ArduinoType.BOTNROLL); // Bot'n'roll
     }
 
-    protected ArduinoUSBConnector(ResourceBundle serverProps, String brickName, List<UsbDevice> supportedRobots) {
-        super(serverProps, brickName);
+    private String portName = null;
+    private ArduinoCommunicator arducomm = null;
+    private ArduinoType type = ArduinoType.NONE;
 
-        this.supportedRobots = supportedRobots;
+    public ArduinoUSBConnector(ResourceBundle serverProps) {
+        super(serverProps, "Arduino");
     }
 
     @Override
     public boolean findRobot() {
         if ( SystemUtils.IS_OS_LINUX ) {
-            return findArduinoLinux();
+            this.type = findArduinoLinux();
         } else if ( SystemUtils.IS_OS_WINDOWS ) {
-            return findArduinoWindows();
+            this.type = findArduinoWindows();
         } else if ( SystemUtils.IS_OS_MAC_OSX ) {
-            return findArduinoMac();
-        } else {
-            return false;
+            this.type = findArduinoMac();
         }
-    }
-
-    protected AbstractArduinoCommunicator createArduinoCommunicator() {
-        return new ArduinoCommunicator(this.brickName);
+        switch ( this.type ) {
+            case UNO:
+            case MEGA:
+            case NANO:
+                this.brickName = "Arduino " + this.type.getPrettyText();
+                break;
+            case BOB3:
+            case BOTNROLL:
+                this.brickName = this.type.getPrettyText();
+                break;
+            case NONE:
+                break;
+        }
+        return this.type != ArduinoType.NONE;
     }
 
     @Override
@@ -65,7 +76,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     LOG.info("No Arduino device connected");
                     Thread.sleep(1000);
                 } else {
-                    this.arducomm = createArduinoCommunicator();
+                    this.arducomm = new ArduinoCommunicator(this.brickName, this.type);
                     this.state = State.WAIT_FOR_CONNECT_BUTTON_PRESS;
                     notifyConnectionStateChanged(this.state);
                     break;
@@ -112,7 +123,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     LOG.info("CONNECT {}", io.getMessage());
                     reset(State.ERROR_HTTP);
                 }
-
+                break;
             case WAIT_FOR_CMD:
                 this.brickData = this.arducomm.getDeviceInfo();
                 this.brickData.put(KEY_TOKEN, this.token);
@@ -139,10 +150,6 @@ public class ArduinoUSBConnector extends AbstractConnector {
                                 os.write(binaryfile);
                             }
 
-                            if (this.arducomm instanceof ArduinoCommunicator) {
-                                this.arducomm.setType(ArduinoType.fromString(response.getString(KEY_SUBTYPE).toLowerCase()));
-                            }
-
                             this.state = State.WAIT_UPLOAD;
                             notifyConnectionStateChanged(this.state);
                             this.arducomm.uploadFile(this.portName, temp.getAbsolutePath());
@@ -165,13 +172,14 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     LOG.info("WAIT_FOR_CMD {}", r.getMessage());
                     reset(State.ERROR_HTTP);
                 }
+                break;
             default:
                 break;
         }
     }
 
     // based on https://stackoverflow.com/questions/22042661/mac-osx-get-usb-vendor-id-and-product-id
-    protected boolean findArduinoMac() {
+    private ArduinoType findArduinoMac() {
         try {
             Runtime rt = Runtime.getRuntime();
             String commands[] =
@@ -191,61 +199,64 @@ public class ArduinoUSBConnector extends AbstractConnector {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(pr.getInputStream()))) {
                 String line;
                 while ( (line = reader.readLine()) != null ) {
-                    for ( UsbDevice device : supportedRobots ) {
+                    for ( Entry<UsbDevice, ArduinoType> robotEntry : supportedRobots.entrySet() ) {
+                        UsbDevice usbDevice = robotEntry.getKey();
                         // search the device in the commands output
-                        Matcher m = Pattern.compile("(?i)0x" + device.vendorId + ":0x" + device.productId + " 0x(\\d{3}).* \\/").matcher(line);
+                        Matcher m = Pattern.compile("(?i)0x" + usbDevice.vendorId + ":0x" + usbDevice.productId + " 0x(\\d{3}).* \\/").matcher(line);
                         if ( m.find() ) {
                             // the corresponding tty ID seems to be the third hex number
                             // TODO do better, this is just an ugly workaround that always takes the first tty.usbserial
                             // TODO i do not know any way to correlate the unique id of the port to the device
-                            if ( device.vendorId.equalsIgnoreCase("0403") && device.productId.equalsIgnoreCase("6001") ) {
+                            if ( usbDevice.vendorId.equalsIgnoreCase("0403") && usbDevice.productId.equalsIgnoreCase("6001") ) {
                                 Process devPr = rt.exec("ls /dev/");
                                 try (BufferedReader devReader = new BufferedReader(new InputStreamReader(devPr.getInputStream()))) {
                                     String devFolder;
                                     while ( (devFolder = devReader.readLine()) != null ) {
                                         if ( devFolder.contains("tty.usbserial") ) {
                                             this.portName = devFolder;
-                                            LOG.info("Found robot: {}:{}, using portname {}", device.vendorId, device.productId, this.portName);
-                                            return true;
+                                            LOG.info("Found robot: {}:{}, using portname {}", usbDevice.vendorId, usbDevice.productId, this.portName);
+                                            return robotEntry.getValue();
                                         }
                                     }
                                 }
                             }
-                            this.portName = "tty.usbmodem" + m.group(1) + "1";
-                            LOG.info("Found robot: {}:{}, using portname {}", device.vendorId, device.productId, this.portName);
-                            return true;
+                            this.portName = "tty.usbmodem" + m.group(1) + '1';
+                            LOG.info("Found robot: {}:{}, using portname {}", usbDevice.vendorId, usbDevice.productId, this.portName);
+                            return robotEntry.getValue();
                         }
                     }
                 }
             }
         } catch ( IOException e ) {
-            return false;
+            return ArduinoType.NONE;
         }
-        return false;
+        return ArduinoType.NONE;
     }
 
-    private boolean findArduinoWindows() {
+    private ArduinoType findArduinoWindows() {
         try {
-            for ( UsbDevice device : supportedRobots ) {
+            for ( Entry<UsbDevice, ArduinoType> robotEntry : supportedRobots.entrySet() ) {
+                UsbDevice usbDevice = robotEntry.getKey();
+
                 String ArduQueryResult =
                     JWMI.getWMIValue(
-                        "SELECT * FROM Win32_PnPEntity WHERE PnPDeviceID " + "LIKE '%VID_" + device.vendorId + "%PID_" + device.productId + "%'",
+                        "SELECT * FROM Win32_PnPEntity WHERE PnPDeviceID " + "LIKE '%VID_" + usbDevice.vendorId + "%PID_" + usbDevice.productId + "%'",
                         "Caption");
                 Matcher m = Pattern.compile(".*\\((COM.)\\)").matcher(ArduQueryResult);
                 if ( m.find() ) {
                     this.portName = m.group(1);
-                    LOG.info("Found robot: {}:{}, using portname {}", device.vendorId, device.productId, this.portName);
-                    return true;
+                    LOG.info("Found robot: {}:{}, using portname {}", usbDevice.vendorId, usbDevice.productId, this.portName);
+                    return robotEntry.getValue();
                 }
             }
-            return false;
+            return ArduinoType.NONE;
         } catch ( Exception e ) {
             LOG.error("Something went wrong when finding Arduinos: {}", e.getMessage());
-            return false;
+            return ArduinoType.NONE;
         }
     }
 
-    private boolean findArduinoLinux() {
+    private ArduinoType findArduinoLinux() {
         File devices = new File("/sys/bus/usb/devices");
 
         // check every usb device
@@ -260,7 +271,8 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     String idProduct = Files.lines(idProductFile.toPath()).findFirst().get();
 
                     // see if the ids are supported
-                    if ( this.supportedRobots.contains(new UsbDevice(idVendor, idProduct)) ) {
+                    UsbDevice usbDevice = new UsbDevice(idVendor, idProduct);
+                    if ( supportedRobots.keySet().contains(usbDevice)) {
                         // recover the tty portname of the device
                         // it can be found in the subdirectory with the same name as the device
                         for ( File subdirectory : devicesDirectories.listFiles() ) {
@@ -273,7 +285,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                             }
                         }
                         LOG.info("Found robot: {}:{}, using portname {}", idVendor, idProduct, this.portName);
-                        return true;
+                        return supportedRobots.get(usbDevice);
                     }
                 } catch ( IOException e ) {
                     // continue if id files do not exist
@@ -281,7 +293,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
             }
         }
 
-        return false;
+        return ArduinoType.NONE;
     }
 
     public String getPort() {

@@ -382,6 +382,10 @@ public class ConnectionView extends JFrame {
         this.menuArduino.setVisible(false);
     }
 
+    public void setArduinoMenuText(String text) {
+        this.menuArduino.setText(text);
+    }
+
     public String getSelectedRobot() {
         return this.listRobots.getSelectedValue();
     }

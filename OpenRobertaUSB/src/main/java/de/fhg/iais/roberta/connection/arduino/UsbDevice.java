@@ -24,6 +24,6 @@ class UsbDevice {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.vendorId, this.productId);
+        return Objects.hash(this.vendorId.toLowerCase(), this.productId.toLowerCase());
     }
 }

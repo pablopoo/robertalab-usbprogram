@@ -155,8 +155,9 @@ public class UIController implements Observer {
                 this.connected = false;
                 this.conView.setWaitForConnect();
 
-                if (connector instanceof ArduinoUSBConnector) {
+                if (this.connector instanceof ArduinoUSBConnector) {
                     this.conView.showArduinoMenu();
+                    this.conView.setArduinoMenuText(this.connector.getBrickName());
                 }
 
                 break;
