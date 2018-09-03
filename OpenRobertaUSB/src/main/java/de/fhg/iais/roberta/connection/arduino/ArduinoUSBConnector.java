@@ -109,6 +109,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                         case CMD_REPEAT:
                             this.state = State.WAIT_FOR_CMD;
                             notifyConnectionStateChanged(this.state);
+                            LOG.info("Robot successfully registered with token {}, waiting for commands", this.token);
                             break;
                         case CMD_ABORT:
                             LOG.info("registration timeout");

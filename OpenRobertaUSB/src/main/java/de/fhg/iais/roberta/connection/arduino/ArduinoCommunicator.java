@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
 import java.util.Properties;
 
 public class ArduinoCommunicator {
@@ -73,6 +72,7 @@ public class ArduinoCommunicator {
                 eArg = "-e";
             }
 
+            LOG.info("Starting to upload program {} to {}{}", filePath, portPath, portName);
             ProcessBuilder procBuilder = new ProcessBuilder(this.avrPath,
                     "-v",
                     "-D",
@@ -83,12 +83,17 @@ public class ArduinoCommunicator {
                     "-P" + portPath + portName,
                     eArg);
 
-            procBuilder.redirectInput(Redirect.INHERIT);
-            procBuilder.redirectOutput(Redirect.INHERIT);
-            procBuilder.redirectError(Redirect.INHERIT);
+//            procBuilder.redirectInput(Redirect.INHERIT);
+//            procBuilder.redirectOutput(Redirect.INHERIT);
+//            procBuilder.redirectError(Redirect.INHERIT);
 
             Process p = procBuilder.start();
             int ecode = p.waitFor();
+            if (ecode == 0) {
+                LOG.info("Program uploaded successfully");
+            } else {
+                LOG.info("Program was unable to be uploaded: {}", ecode);
+            }
             LOG.debug("Exit code {}", ecode);
         } catch ( IOException | InterruptedException e ) {
             LOG.error("Error while uploading to arduino: {}", e.getMessage());

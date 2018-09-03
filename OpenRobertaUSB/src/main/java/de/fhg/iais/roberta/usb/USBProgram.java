@@ -48,7 +48,7 @@ public class USBProgram {
     }
 
     public void run() {
-        LOG.info("Entering run method!");
+        LOG.debug("Entering run method!");
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         while(!Thread.currentThread().isInterrupted()) {
             Future<IConnector> robotSearchFuture = executorService.submit(new RobotSearchTask(connectorList, this.controller));
