@@ -5,7 +5,7 @@ public enum ArduinoType {
     MEGA ("mega", "Mega"),
     NANO ("nano", "Nano"),
     BOB3 ("bob3", "BOB3"),
-    BOTNROLL ("botnroll", "Bot'n Roll"),
+    BOTNROLL ("ardu", "Bot'n Roll"),
     NONE ("none", "none");
 
     private final String text;

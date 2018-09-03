@@ -60,7 +60,7 @@ public class ArduinoCommunicator {
             String pArg = "";
             String cArg = "";
             String eArg = "";
-            if ( (this.type == ArduinoType.UNO) || (this.type == ArduinoType.NANO) ) {
+            if ( (this.type == ArduinoType.UNO) || (this.type == ArduinoType.NANO) || (this.type == ArduinoType.BOTNROLL)) {
                 pArg = "-patmega328p";
                 cArg = "-carduino";
             } else if (this.type == ArduinoType.MEGA) {
