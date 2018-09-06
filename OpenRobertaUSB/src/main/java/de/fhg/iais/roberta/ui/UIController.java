@@ -7,10 +7,12 @@ import de.fhg.iais.roberta.connection.arduino.ArduinoUSBConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
+import javax.swing.ImageIcon;
+import javax.swing.SwingUtilities;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.ResourceBundle;
@@ -23,13 +25,13 @@ import static de.fhg.iais.roberta.usb.USBProgram.closeProgram;
 public class UIController implements Observer {
     private static final Logger LOG = LoggerFactory.getLogger(UIController.class);
 
-    private Map<String, IConnector> connectorMap = new HashMap<>();
+    private final Map<String, IConnector> connectorMap = new HashMap<>();
     private IConnector connector;
     private final ConnectionView conView;
     private boolean connected;
     private final ResourceBundle rb;
 
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final SerialMonitor serialMonitor;
     private Future<Void> serialLoggingFuture;
 
@@ -71,6 +73,20 @@ public class UIController implements Observer {
         ((Observable) this.connector).addObserver(this);
 
         LOG.info("GUI setup done. Using {}", usbCon.getClass().getSimpleName());
+
+        if (this.connector instanceof ArduinoUSBConnector) {
+            ArduinoUSBConnector arduinoUSBConnector = (ArduinoUSBConnector) this.connector;
+            Map<Integer, String> errors = arduinoUSBConnector.getReadIdFileErrors();
+            if (!errors.isEmpty()) {
+                StringBuilder sb = new StringBuilder(200);
+                sb.append(System.lineSeparator());
+                for ( Entry<Integer, String> entry : errors.entrySet() ) {
+                    sb.append("Line ").append(entry.getKey()).append(": ").append(this.rb.getString(entry.getValue())).append(System.lineSeparator());
+                }
+                LOG.error("Something went wrong when loading the arduino id file:{}", sb);
+                showConfigErrorPopup(sb.toString());
+            }
+        }
     }
 
     public void setDiscover() {
@@ -78,11 +94,6 @@ public class UIController implements Observer {
         this.connected = false;
         this.conView.setDiscover();
     }
-
-    public ResourceBundle getRb() {
-        return this.rb;
-    }
-
 
     public void showAdvancedOptions() {
         LOG.debug("showAdvancedOptions");
@@ -218,6 +229,14 @@ public class UIController implements Observer {
                 new ImageIcon(getClass().getClassLoader().getResource("images/iais_logo.gif"))
                     .getImage()
                     .getScaledInstance(100, 27, java.awt.Image.SCALE_AREA_AVERAGING)));
+    }
+
+    public void showConfigErrorPopup(String errors) {
+        ORAPopup.showPopup(
+            this.conView,
+            this.rb.getString("attention"),
+            this.rb.getString("errorReadConfig") + errors,
+            null);
     }
 
     public void showSerialMonitor() {

@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
@@ -24,23 +25,75 @@ import java.util.regex.Pattern;
 
 public class ArduinoUSBConnector extends AbstractConnector {
 
-    private static final Map<UsbDevice, ArduinoType> supportedRobots;
-    static {
-        supportedRobots = new HashMap<>();
-        supportedRobots.put(new UsbDevice("2341", "0043"), ArduinoType.UNO); // Uno
-        supportedRobots.put(new UsbDevice("2A03", "0043"), ArduinoType.UNO); // Uno, different vendor
-        supportedRobots.put(new UsbDevice("2341", "0042"), ArduinoType.MEGA); // Mega
-        supportedRobots.put(new UsbDevice("0403", "6001"), ArduinoType.NANO); // Nano, FT32R UART USB)
-        supportedRobots.put(new UsbDevice("16C0", "0933"), ArduinoType.BOB3); // BOB3
-        supportedRobots.put(new UsbDevice("10C4", "EA60"), ArduinoType.BOTNROLL); // Bot'n'roll
-    }
+    private static final Map<UsbDevice, ArduinoType> supportedRobots = new HashMap<>();
+    private static final String ARDUINO_ID_FILE = "arduino-ids.txt";
 
     private String portName = null;
     private ArduinoCommunicator arducomm = null;
     private ArduinoType type = ArduinoType.NONE;
 
+    private final Map<Integer, String> readIdFileErrors = new HashMap<>();
+
     public ArduinoUSBConnector(ResourceBundle serverProps) {
         super(serverProps, "Arduino");
+
+        loadArduinoIds();
+    }
+
+    private static String checkIdFileLineFormat(List<String> values) {
+        if (values.size() == 3) {
+            try {
+                String.valueOf(Integer.valueOf(values.get(0), 16));
+            } catch ( NumberFormatException e ) {
+                return "errorConfigVendorId";
+            }
+            try {
+                String.valueOf(Integer.valueOf(values.get(1), 16));
+            } catch ( NumberFormatException e ) {
+                return "errorConfigProductId";
+            }
+            try {
+                ArduinoType.fromString(values.get(2));
+            } catch ( IllegalArgumentException e ) {
+                return "errorConfigArduinoType";
+            }
+        } else {
+            return "errorConfigFormat";
+        }
+        return "";
+    }
+
+    private void loadArduinoIds() {
+        File f = new File(ARDUINO_ID_FILE);
+        if (!f.exists()) {
+            LOG.warn("Could not find {}, using default file!", ARDUINO_ID_FILE);
+            f = new File(getClass().getClassLoader().getResource(ARDUINO_ID_FILE).getFile());
+        }
+
+        try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+            String line;
+            int lineNr = 1;
+            while ((line = br.readLine()) != null) {
+                if (!line.isEmpty() && !line.startsWith("#")) {
+                    List<String> values = Arrays.asList(line.split(","));
+
+                    String error = checkIdFileLineFormat(values);
+                    if ( error.isEmpty() ) {
+                        supportedRobots.put(new UsbDevice(values.get(0), values.get(1)), ArduinoType.fromString(values.get(2)));
+                    } else {
+                        this.readIdFileErrors.put(lineNr, error);
+                    }
+                }
+                lineNr++;
+            }
+        } catch ( IOException e ) {
+            LOG.error("Something went wrong with the {} file.", ARDUINO_ID_FILE);
+            this.readIdFileErrors.put(0, e.getMessage());
+        }
+    }
+
+    public Map<Integer, String> getReadIdFileErrors() {
+        return new HashMap<>(this.readIdFileErrors);
     }
 
     @Override
