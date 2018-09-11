@@ -2,25 +2,28 @@
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
         <DirectoryRef Id="RESOURCES">
-            <Directory Id="dir452EEE4B5DF39BBAA9C2EFED673BF4E1" Name="windows" />
+            <Directory Id="DIR_WINDOWS" Name="windows" />
         </DirectoryRef>
     </Fragment>
     <Fragment>
         <ComponentGroup Id="ResGroupID">
-            <Component Id="cmpA8DC04F23D0B96F61E7C61F696F00190" Directory="dirB00B92B8385E211176B271A84A938C60" Guid="{94A15CF5-09DF-4D1E-96B2-2775999ACA0B}">
-                <File Id="fil1B2624FBA806F0F1AD9028D8CE28CB98" KeyPath="yes" Source="SourceDir\windows\arduino\avrdude.conf" />
+            <Component Id="CMP_AVRDUDE_CONF" Directory="DIR_ARDUINO" Guid="*">
+                <File Id="FILE_AVRDUDE_CONF" KeyPath="yes" Source="SourceDir\windows\arduino\avrdude.conf" />
             </Component>
-            <Component Id="cmpEF3B2CB4EC8AEB6CEA9199A7C0E87699" Directory="dirB00B92B8385E211176B271A84A938C60" Guid="{720C6C33-A832-4593-B966-42B1469FEF0D}">
-                <File Id="fil0BDEC6CD247FDD7AD2267581C53CFF77" KeyPath="yes" Source="SourceDir\windows\arduino\avrdude.exe" />
+            <Component Id="CMP_AVRDUDE" Directory="DIR_ARDUINO" Guid="*">
+                <File Id="FILE_AVRDUDE" KeyPath="yes" Source="SourceDir\windows\arduino\avrdude.exe" />
             </Component>
-            <Component Id="cmp63FF09162BABC6DC5B2139C6941BF48A" Directory="dirB00B92B8385E211176B271A84A938C60" Guid="{A7273F75-D473-4381-97E5-FAC5406DCCC1}">
-                <File Id="fil636A874E2D6DF8E80E374738C62FDDFC" KeyPath="yes" Source="SourceDir\windows\arduino\libusb0.dll" />
+            <Component Id="CMP_LIBUSB" Directory="DIR_ARDUINO" Guid="*">
+                <File Id="FILE_LIBUSB" KeyPath="yes" Source="SourceDir\windows\arduino\libusb0.dll" />
+            </Component>
+            <Component Id="CMP_ARDUINO_IDS" Directory="INSTALLDIR" Guid="*">
+                <File Id="FILE_ARDUINO_IDS" KeyPath="yes" Source="SourceDir\arduino-ids.txt" />
             </Component>
         </ComponentGroup>
     </Fragment>
     <Fragment>
-        <DirectoryRef Id="dir452EEE4B5DF39BBAA9C2EFED673BF4E1">
-            <Directory Id="dirB00B92B8385E211176B271A84A938C60" Name="arduino" />
+        <DirectoryRef Id="DIR_WINDOWS">
+            <Directory Id="DIR_ARDUINO" Name="arduino" />
         </DirectoryRef>
     </Fragment>
 </Wix>
