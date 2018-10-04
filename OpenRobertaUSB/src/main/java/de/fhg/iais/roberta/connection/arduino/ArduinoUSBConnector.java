@@ -296,7 +296,7 @@ public class ArduinoUSBConnector extends AbstractConnector {
                     JWMI.getWMIValue(
                         "SELECT * FROM Win32_PnPEntity WHERE PnPDeviceID " + "LIKE '%VID_" + usbDevice.vendorId + "%PID_" + usbDevice.productId + "%'",
                         "Caption");
-                Matcher m = Pattern.compile(".*\\((COM.)\\)").matcher(ArduQueryResult);
+                Matcher m = Pattern.compile(".*\\((COM\\d+)\\)").matcher(ArduQueryResult);
                 if ( m.find() ) {
                     this.portName = m.group(1);
                     LOG.info("Found robot: {}:{}, using portname {}", usbDevice.vendorId, usbDevice.productId, this.portName);
