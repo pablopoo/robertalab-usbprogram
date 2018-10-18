@@ -106,17 +106,15 @@ public class ArduinoUSBConnector extends AbstractConnector {
             this.type = findArduinoMac();
         }
         switch ( this.type ) {
+            // Classic Arduino types
             case UNO:
             case MEGA:
             case NANO:
                 this.brickName = "Arduino " + this.type.getPrettyText();
                 break;
-            case BOB3:
-            case BOTNROLL:
+            // Special Arduino types, use the pretty text instead
+            default:
                 this.brickName = this.type.getPrettyText();
-                break;
-            case NONE:
-                break;
         }
         return this.type != ArduinoType.NONE;
     }

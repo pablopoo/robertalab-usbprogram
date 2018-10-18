@@ -57,19 +57,24 @@ public class ArduinoCommunicator {
             portPath = "";
         }
         try {
-            String pArg = "";
-            String cArg = "";
+            String pArg;
+            String cArg;
             String eArg = "";
-            if ( (this.type == ArduinoType.UNO) || (this.type == ArduinoType.NANO) || (this.type == ArduinoType.BOTNROLL)) {
-                pArg = "-patmega328p";
-                cArg = "-carduino";
-            } else if (this.type == ArduinoType.MEGA) {
-                pArg = "-patmega2560";
-                cArg = "-cwiring";
-            } else if (this.type == ArduinoType.BOB3) {
-                pArg = "-patmega88";
-                cArg = "-cavrisp2";
-                eArg = "-e";
+            switch ( this.type ) {
+                // specify if different
+                case MEGA:
+                    pArg = "-patmega2560";
+                    cArg = "-cwiring";
+                    break;
+                case BOB3:
+                    pArg = "-patmega88";
+                    cArg = "-cavrisp2";
+                    eArg = "-e";
+                    break;
+                default: // take uno config as default, this is used by uno, nano, botnroll and mbot
+                    pArg = "-patmega328p";
+                    cArg = "-carduino";
+                    break;
             }
 
             LOG.info("Starting to upload program {} to {}{}", filePath, portPath, portName);
