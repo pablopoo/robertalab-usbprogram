@@ -260,25 +260,25 @@ public class ArduinoUSBConnector extends AbstractConnector {
                         // search the device in the commands output
                         Matcher m = Pattern.compile("(?i)0x" + usbDevice.vendorId + ":0x" + usbDevice.productId + " 0x(\\d{3}).* \\/").matcher(line);
                         if ( m.find() ) {
-                            // the corresponding tty ID seems to be the third hex number
-                            // TODO do better, this is just an ugly workaround that always takes the first tty.usbserial
-                            // TODO i do not know any way to correlate the unique id of the port to the device
-                            if ( usbDevice.vendorId.equalsIgnoreCase("0403") && usbDevice.productId.equalsIgnoreCase("6001") ) {
-                                Process devPr = rt.exec("ls /dev/");
-                                try (BufferedReader devReader = new BufferedReader(new InputStreamReader(devPr.getInputStream()))) {
-                                    String devFolder;
-                                    while ( (devFolder = devReader.readLine()) != null ) {
-                                        if ( devFolder.contains("tty.usbserial") ) {
-                                            this.portName = devFolder;
+                             // Search for cu.* ports on MacOS, since tty.* are for device initiated connections.
+                            String portCommands[]=
+                                {
+                                    "/bin/sh",
+                                    "-c",
+                                    "ls -r /dev/cu.{usb,wchusb}*"
+                                };
+                                Process portProcess = rt.exec(portCommands);
+                                try (BufferedReader portProcessReader = new BufferedReader(new InputStreamReader(portProcess.getInputStream()))) {
+                                    String availablePorts;
+                                    while ( (availablePorts = portProcessReader.readLine()) != null ) {
+                                        if ( availablePorts.contains(m.group(1)) ) {
+                                            this.portName = availablePorts.replace("/dev/",""); //port name cleanup
                                             LOG.info("Found robot: {}:{}, using portname {}", usbDevice.vendorId, usbDevice.productId, this.portName);
                                             return robotEntry.getValue();
                                         }
                                     }
                                 }
-                            }
-                            this.portName = "tty.usbmodem" + m.group(1) + '1';
-                            LOG.info("Found robot: {}:{}, using portname {}", usbDevice.vendorId, usbDevice.productId, this.portName);
-                            return robotEntry.getValue();
+                            return ArduinoType.NONE;
                         }
                     }
                 }
